@@ -8,4 +8,5 @@ window.USUARIOS_PLATAFORMA = [
   {"nombre": "Paulina", "id": "ff69ebda098d4ca0fd1e61e82b124019c4cbfa472dae2512646d8e21186b3219", "sal": "3837993fa68662d6", "hash": "b39e1b7988c54ccf7c6ace9c35bb72a03719a57acda7b8737408ec2d524918dd"},
   {"nombre": "Claudia", "id": "2c64eb32ec7691b7bb42cc2b41612ae151c1d499cd155bd13e68d3b0eb815634", "sal": "01541f8033885db4", "hash": "a0fbf37b97da2fd7338235de95e08050c7ab8d2a759272cdce852cdd1245e49f"},
   {"nombre": "Silsa", "id": "ae5b340d767307bbd253c6c2af2840ff74e07dbd5f997632fb21758048710319", "sal": "f6f6e5e75b597bc5", "hash": "70d8b0a354bda0feda04b293727ab4bf160fbdaeb4522aeed85330fd075a1e10"},
+  {"nombre": "Leonardo", "id": "335b01d787e3d65956f49938d6b9befda49dc704f8fdf00a63d1088ad8111f50", "sal": "bc047d515994f5b3", "hash": "30e0534148cf3fb50e3fc0183691e72447e3355c31f01f791f813d4979d51fd6"},
 ];

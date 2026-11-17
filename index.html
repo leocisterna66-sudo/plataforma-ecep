@@ -1,0 +1,2659 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Plataforma de Estudio y Ensayo ECEP — Escuela Patrimonial California · Tomé</title>
+  <!-- Tailwind CSS v3 vía CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Fuente Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    .fade-in { animation: fadeIn 0.25s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    /* Scrollbar limpio */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- ==================== PANTALLA DE INGRESO (correo + clave asignada) ==================== -->
+  <div id="login-overlay" class="fixed inset-0 z-[60] bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex items-center justify-center p-4 overflow-y-auto">
+    <form id="login-form" onsubmit="intentarIngreso(event)" class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 space-y-5 fade-in" autocomplete="on">
+      <div class="space-y-2">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
+          <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+          Escuela Patrimonial California · Tomé
+        </span>
+        <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Plataforma de Estudio y Ensayo ECEP</h1>
+        <p class="text-sm text-slate-500">Acceso exclusivo para docentes. Ingresa con tu correo y la clave que te entregó el administrador de la plataforma.</p>
+      </div>
+      <div>
+        <label for="login-correo" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Correo electrónico</label>
+        <input id="login-correo" type="email" required autocomplete="username" placeholder="nombre@correo.cl" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600" />
+      </div>
+      <div>
+        <label for="login-clave" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Clave</label>
+        <div class="relative">
+          <input id="login-clave" type="password" required autocomplete="current-password" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 pr-20 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600" />
+          <button type="button" onclick="alternarVerClave()" id="btn-ver-clave" class="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100">Mostrar</button>
+        </div>
+      </div>
+      <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
+        <input id="login-recordar" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-blue-700 focus:ring-blue-600" />
+        Mantener la sesión iniciada en este dispositivo
+      </label>
+      <p id="login-error" class="hidden text-sm font-semibold text-rose-800 bg-rose-50 border border-rose-200 rounded-xl px-3.5 py-2.5"></p>
+      <button type="submit" id="login-btn" class="w-full py-3 px-5 rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-800 hover:to-indigo-800 text-white font-extrabold text-sm shadow-md transition">Ingresar</button>
+      <p class="text-xs text-center text-slate-400">¿No tienes clave o la olvidaste? Solicítala al administrador de la plataforma (prof. Leonardo Cisterna).</p>
+    </form>
+  </div>
+
+  <!-- Contenedor de Notificaciones Toast -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full px-4 sm:px-0 pointer-events-none"></div>
+
+  <!-- Modal de Confirmación Personalizado (sin alert/confirm nativo) -->
+  <div id="confirm-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200 fade-in">
+      <div class="flex items-start gap-3">
+        <div class="p-2.5 rounded-xl bg-amber-100 text-amber-700 shrink-0">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        </div>
+        <div>
+          <h3 id="modal-title" class="text-lg font-bold text-slate-900">Confirmar acción</h3>
+          <p id="modal-message" class="text-sm text-slate-600 mt-1">¿Deseas continuar?</p>
+        </div>
+      </div>
+      <div class="mt-6 flex justify-end gap-2.5">
+        <button id="modal-cancel" type="button" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition">Cancelar</button>
+        <button id="modal-confirm" type="button" class="px-4 py-2 rounded-xl bg-blue-700 text-white text-sm font-semibold hover:bg-blue-800 transition">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ENCABEZADO INSTITUCIONAL -->
+  <header class="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white shadow-lg border-b border-blue-900/60">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <!-- Identidad Escuela y Plataforma -->
+        <div class="flex items-start sm:items-center gap-3.5">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-inner border border-blue-400/30 shrink-0">
+            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+            </svg>
+          </div>
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-400/15 text-amber-300 border border-amber-400/30">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                Escuela Patrimonial California · Tomé
+              </span>
+              <span class="text-xs font-medium text-blue-200 bg-blue-900/60 px-2.5 py-0.5 rounded-full border border-blue-700/50">
+                CPEIP · Instrumento 2026
+              </span>
+            </div>
+            <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-white mt-1">
+              Plataforma de Estudio y Ensayo ECEP (1° a 8° Básico)
+            </h1>
+          </div>
+        </div>
+
+        <!-- Botones Rápidos para Compartir y Guía Docente -->
+        <div class="flex flex-wrap items-center gap-2">
+          <div id="usuario-chip" class="hidden items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-xl bg-white/10 border border-white/15 text-xs sm:text-sm text-white">
+            <span id="usuario-inicial" class="w-7 h-7 rounded-full bg-amber-400 text-slate-900 font-extrabold flex items-center justify-center text-xs">D</span>
+            <span id="usuario-nombre" class="font-semibold max-w-[180px] truncate"></span>
+            <button type="button" onclick="cerrarSesion()" class="ml-1 px-2 py-0.5 rounded-lg text-blue-200 hover:text-white hover:bg-white/10 font-semibold">Salir</button>
+          </div>
+          <button type="button" onclick="toggleGuiaDocente()" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs sm:text-sm font-semibold border border-white/15 transition">
+            <svg class="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Guía rápida para el equipo docente
+          </button>
+
+          <button type="button" onclick="exportarBancoJSON()" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold shadow-sm transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Exportar Banco (.json)
+          </button>
+
+          <label class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-semibold shadow-sm cursor-pointer transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            Importar Banco (.json)
+            <input type="file" id="import-json-input" accept=".json" class="hidden" onchange="importarBancoJSON(event)" />
+          </label>
+        </div>
+      </div>
+
+      <!-- Panel Desplegable: Guía Rápida para Colegas -->
+      <div id="guia-docente-panel" class="hidden mt-5 pt-5 border-t border-blue-800/70 fade-in">
+        <div class="bg-slate-900/80 rounded-2xl p-4 sm:p-5 border border-blue-700/40">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-bold text-amber-300 uppercase tracking-wider">Orientaciones de Uso para Colegas — Escuela Patrimonial California</h2>
+            <button type="button" onclick="toggleGuiaDocente()" class="text-slate-400 hover:text-white text-xs font-semibold">Cerrar ✕</button>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 text-xs sm:text-sm">
+            <div class="bg-white/5 rounded-xl p-3.5 border border-white/10">
+              <div class="font-bold text-blue-300 mb-1">1. Selecciona ciclo y dominio</div>
+              <p class="text-slate-300 leading-relaxed">Filtra entre Primer Ciclo Generalista (1° a 4°) o Segundo Ciclo por asignatura, y acota por Dominio 2026 o dimensión disciplinar/didáctica.</p>
+            </div>
+            <div class="bg-white/5 rounded-xl p-3.5 border border-white/10">
+              <div class="font-bold text-emerald-300 mb-1">2. Elige modalidad de estudio</div>
+              <p class="text-slate-300 leading-relaxed">Usa <strong>Práctica Guiada</strong> para recibir fundamento inmediato y análisis de distractores, o <strong>Ensayo Simulado</strong> con cronómetro y hoja de respuestas.</p>
+            </div>
+            <div class="bg-white/5 rounded-xl p-3.5 border border-white/10">
+              <div class="font-bold text-amber-300 mb-1">3. Revisa Temario Oficial 2026</div>
+              <p class="text-slate-300 leading-relaxed">Marca con checklist cada indicador del instrumento CPEIP 2026 ya estudiado; tu avance queda guardado automáticamente en tu navegador.</p>
+            </div>
+            <div class="bg-white/5 rounded-xl p-3.5 border border-white/10">
+              <div class="font-bold text-purple-300 mb-1">4. Rinde las pruebas oficiales</div>
+              <p class="text-slate-300 leading-relaxed">En <strong>Pruebas Oficiales 2017–2020</strong> abre el cuadernillo original del CPEIP, marca tus respuestas en la hoja digital y obtén la corrección con la pauta oficial. Tu avance y tus resultados quedan guardados en tu cuenta.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BARRA DE NAVEGACIÓN POR PESTAÑAS -->
+    <nav class="bg-slate-900/90 border-t border-white/10">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex overflow-x-auto gap-1 py-2">
+        <button type="button" id="tab-btn-config" onclick="cambiarVista('config')" class="tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition flex items-center gap-2 bg-blue-600 text-white shadow-sm">
+          <span>1. Configurar Práctica / Ensayo</span>
+        </button>
+        <button type="button" id="tab-btn-oficiales" onclick="cambiarVista('oficiales')" class="tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition flex items-center gap-2 text-slate-300 hover:text-white hover:bg-white/10">
+          <span>2. Pruebas Oficiales 2017–2020</span>
+          <span class="px-2 py-0.5 text-[11px] rounded-full bg-amber-400/20 text-amber-200 border border-amber-400/30">48</span>
+        </button>
+        <button type="button" id="tab-btn-temario" onclick="cambiarVista('temario')" class="tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition flex items-center gap-2 text-slate-300 hover:text-white hover:bg-white/10">
+          <span>3. Temario Oficial 2026 (Checklist)</span>
+          <span id="nav-temario-pct" class="px-2 py-0.5 text-[11px] rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">0%</span>
+        </button>
+        <button type="button" id="tab-btn-importar" onclick="cambiarVista('importar')" class="tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition flex items-center gap-2 text-slate-300 hover:text-white hover:bg-white/10">
+          <span>4. Importar Prueba CPEIP</span>
+        </button>
+        <button type="button" id="tab-btn-historial" onclick="cambiarVista('historial')" class="tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition flex items-center gap-2 text-slate-300 hover:text-white hover:bg-white/10">
+          <span>5. Historial y Diagnóstico</span>
+          <span id="nav-historial-count" class="px-2 py-0.5 text-[11px] rounded-full bg-blue-500/20 text-blue-200 border border-blue-400/30">0</span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+
+    <!-- ==================== VISTA 1: CONFIGURAR PRÁCTICA / ENSAYO ==================== -->
+    <section id="view-config" class="fade-in space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Panel Izquierdo: Filtros Curriculares -->
+        <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6 space-y-6">
+          <div class="border-b border-slate-100 pb-4 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 class="text-lg sm:text-xl font-extrabold text-slate-900">Configuración de Sesión de Estudio</h2>
+              <p class="text-xs sm:text-sm text-slate-500 mt-0.5">Personaliza tu práctica según tu nivel de desempeño y los dominios evaluados por el CPEIP.</p>
+            </div>
+            <span id="badge-disponibles" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200">
+              <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+              <span id="count-disponibles">0</span> preguntas disponibles
+            </span>
+          </div>
+
+          <!-- Selector de Ciclo / Especialidad -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">1. Ciclo / Especialidad Docente</label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5" id="ciclo-options">
+              <button type="button" data-ciclo="primer_ciclo" onclick="seleccionarFiltro('ciclo', 'primer_ciclo')" class="filter-ciclo text-left p-3.5 rounded-xl border-2 border-blue-600 bg-blue-50/70 transition">
+                <div class="font-bold text-sm text-blue-950">Primer Ciclo Generalista (1° a 4° Básico)</div>
+                <div class="text-xs text-blue-700 mt-0.5">Lenguaje, Matemática, Historia y Ciencias Naturales</div>
+              </button>
+              <button type="button" data-ciclo="segundo_matematica" onclick="seleccionarFiltro('ciclo', 'segundo_matematica')" class="filter-ciclo text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-slate-300 bg-white transition">
+                <div class="font-bold text-sm text-slate-800">Segundo Ciclo · Matemática (5° a 8°)</div>
+                <div class="text-xs text-slate-500 mt-0.5">Álgebra, funciones, geometría y didáctica</div>
+              </button>
+              <button type="button" data-ciclo="segundo_lenguaje" onclick="seleccionarFiltro('ciclo', 'segundo_lenguaje')" class="filter-ciclo text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-slate-300 bg-white transition">
+                <div class="font-bold text-sm text-slate-800">Segundo Ciclo · Lenguaje y Comunicación</div>
+                <div class="text-xs text-slate-500 mt-0.5">Análisis literario, argumentación y escritura</div>
+              </button>
+              <button type="button" data-ciclo="segundo_ciencias" onclick="seleccionarFiltro('ciclo', 'segundo_ciencias')" class="filter-ciclo text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-slate-300 bg-white transition">
+                <div class="font-bold text-sm text-slate-800">Segundo Ciclo · Ciencias Naturales</div>
+                <div class="text-xs text-slate-500 mt-0.5">Biología, física, química e indagación</div>
+              </button>
+              <button type="button" data-ciclo="segundo_historia" onclick="seleccionarFiltro('ciclo', 'segundo_historia')" class="filter-ciclo text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-slate-300 bg-white transition sm:col-span-2">
+                <div class="font-bold text-sm text-slate-800">Segundo Ciclo · Historia, Geografía y Ciencias Sociales</div>
+                <div class="text-xs text-slate-500 mt-0.5">Pensamiento histórico, geografía y formación ciudadana</div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Selector de Dominio Oficial 2026 y Dimensión -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="select-dominio" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">2. Dominio Oficial ECEP 2026</label>
+              <select id="select-dominio" onchange="actualizarDisponibles()" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600">
+                <option value="todos">Todos los Dominios (1 al 4)</option>
+                <option value="D1">Dominio 1: Lenguaje y Comunicación</option>
+                <option value="D2">Dominio 2: Matemática</option>
+                <option value="D3">Dominio 3: Historia, Geografía y Cs. Sociales</option>
+                <option value="D4">Dominio 4: Ciencias Naturales</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="select-dimension" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">3. Dimensión Evaluada</label>
+              <select id="select-dimension" onchange="actualizarDisponibles()" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600">
+                <option value="todas">Todas (Disciplinario + Didáctica)</option>
+                <option value="disciplinario">Conocimientos Relevantes (Disciplinario)</option>
+                <option value="didactico">Enseñanza-Aprendizaje (Didáctica y Aula)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Cantidad de Preguntas -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">4. Cantidad de Reactivos</label>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <button type="button" data-cant="5" onclick="seleccionarFiltro('cantidad', 5)" class="filter-cant py-2.5 px-3 rounded-xl border-2 border-slate-200 text-sm font-bold text-slate-700 hover:border-slate-300 transition">5 preguntas</button>
+              <button type="button" data-cant="10" onclick="seleccionarFiltro('cantidad', 10)" class="filter-cant py-2.5 px-3 rounded-xl border-2 border-blue-600 bg-blue-50 text-sm font-bold text-blue-900 transition">10 preguntas</button>
+              <button type="button" data-cant="15" onclick="seleccionarFiltro('cantidad', 15)" class="filter-cant py-2.5 px-3 rounded-xl border-2 border-slate-200 text-sm font-bold text-slate-700 hover:border-slate-300 transition">15 preguntas</button>
+              <button type="button" data-cant="999" onclick="seleccionarFiltro('cantidad', 999)" class="filter-cant py-2.5 px-3 rounded-xl border-2 border-slate-200 text-sm font-bold text-slate-700 hover:border-slate-300 transition">Todas</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel Derecho: Modalidad y Lanzamiento -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6 flex flex-col justify-between space-y-6">
+          <div class="space-y-4">
+            <div class="border-b border-slate-100 pb-3">
+              <h3 class="text-lg font-extrabold text-slate-900">Modalidad de Trabajo</h3>
+              <p class="text-xs text-slate-500 mt-0.5">Elige entre estudio con retroalimentación inmediata o simulación cronometrada.</p>
+            </div>
+
+            <div class="space-y-3">
+              <button type="button" data-modo="guiada" onclick="seleccionarFiltro('modo', 'guiada')" class="filter-modo w-full text-left p-4 rounded-xl border-2 border-blue-600 bg-blue-50/70 transition">
+                <div class="flex items-center justify-between">
+                  <span class="font-extrabold text-sm text-blue-950">Práctica Guiada</span>
+                  <span class="px-2 py-0.5 text-[11px] font-bold rounded-full bg-blue-600 text-white">Recomendado</span>
+                </div>
+                <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
+                  Corrige al instante cada alternativa seleccionada, mostrando el fundamento curricular, el análisis de distractores y el subdominio ECEP 2026.
+                </p>
+              </button>
+
+              <button type="button" data-modo="ensayo" onclick="seleccionarFiltro('modo', 'ensayo')" class="filter-modo w-full text-left p-4 rounded-xl border-2 border-slate-200 hover:border-slate-300 bg-white transition">
+                <div class="flex items-center justify-between">
+                  <span class="font-extrabold text-sm text-slate-800">Ensayo Simulado CPEIP</span>
+                  <span class="px-2 py-0.5 text-[11px] font-bold rounded-full bg-slate-100 text-slate-600">Con tiempo</span>
+                </div>
+                <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
+                  Simula las condiciones reales de rendición con cronómetro regresivo, navegación libre entre preguntas y marcado de ítems con duda.
+                </p>
+              </button>
+            </div>
+
+            <!-- Configuración de tiempo visible en modo ensayo -->
+            <div id="tiempo-config-box" class="hidden pt-2 fade-in">
+              <label for="select-tiempo" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Duración del Ensayo</label>
+              <select id="select-tiempo" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-800">
+                <option value="15">15 minutos (Ensayo rápido)</option>
+                <option value="30" selected>30 minutos (Estándar)</option>
+                <option value="60">60 minutos (Extendido)</option>
+                <option value="90">90 minutos (Simulacro completo)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="space-y-3 pt-4 border-t border-slate-100">
+            <button type="button" onclick="iniciarSesion()" class="w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-800 hover:to-indigo-800 text-white font-extrabold text-sm sm:text-base shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
+              <span>Comenzar Sesión</span>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            </button>
+            <p class="text-[11px] text-center text-slate-400">
+              Banco actual: <strong id="total-banco-info" class="text-slate-600">0</strong> ítems precargados e importados.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VISTA: PRUEBAS OFICIALES ECEP 2017–2020 (CATÁLOGO) ==================== -->
+    <section id="view-oficiales" class="hidden fade-in space-y-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6 space-y-5">
+        <div class="border-b border-slate-100 pb-4 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3">
+          <div>
+            <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 mb-1">Instrumentos oficiales publicados por el CPEIP</span>
+            <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">Pruebas Oficiales ECEP 2017–2020</h2>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1 max-w-3xl">
+              Rinde el cuadernillo original (con todas sus figuras) y marca tus respuestas en la hoja digital. Al entregar, la plataforma corrige las preguntas cerradas con la pauta oficial del CPEIP. Tus respuestas se guardan solas mientras avanzas.
+            </p>
+          </div>
+          <div id="oficiales-resumen" class="text-xs text-slate-500"></div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div>
+            <label for="of-ciclo" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Ciclo</label>
+            <select id="of-ciclo" onchange="setFiltroOficial('ciclo', this.value)" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium">
+              <option value="todos">Primer y Segundo Ciclo</option>
+              <option value="primer_ciclo">Primer Ciclo Generalista (1° a 4°)</option>
+              <option value="segundo_ciclo">Segundo Ciclo (5° a 8°)</option>
+            </select>
+          </div>
+          <div>
+            <label for="of-asignatura" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Asignatura</label>
+            <select id="of-asignatura" onchange="setFiltroOficial('asignatura', this.value)" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium"></select>
+          </div>
+          <div>
+            <label for="of-anio" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Año</label>
+            <select id="of-anio" onchange="setFiltroOficial('anio', this.value)" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium">
+              <option value="todos">2017 a 2020</option>
+              <option value="2020">2020</option><option value="2019">2019</option><option value="2018">2018</option><option value="2017">2017</option>
+            </select>
+          </div>
+          <div>
+            <label for="of-tiempo" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Tiempo al rendir</label>
+            <select id="of-tiempo" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium">
+              <option value="0">Sin límite (cronómetro libre)</option>
+              <option value="60">Límite de 60 minutos</option>
+              <option value="90">Límite de 90 minutos</option>
+              <option value="120">Límite de 120 minutos</option>
+              <option value="150">Límite de 150 minutos</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div id="oficiales-grid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6">
+        <div class="flex items-center justify-between gap-3 border-b border-slate-100 pb-3 mb-4">
+          <h3 class="text-lg font-extrabold text-slate-900">Mis resultados en pruebas oficiales</h3>
+          <span class="text-xs text-slate-400">Guardados en este dispositivo, para tu cuenta</span>
+        </div>
+        <div id="oficiales-resultados" class="space-y-2.5"></div>
+      </div>
+    </section>
+
+    <!-- ==================== VISTA: RENDIR / REVISAR PRUEBA OFICIAL ==================== -->
+    <section id="view-rendir" class="hidden fade-in space-y-4">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <button type="button" onclick="volverACatalogo()" class="shrink-0 px-3 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50">← Volver</button>
+          <div class="min-w-0">
+            <div id="rendir-titulo" class="font-extrabold text-slate-900 text-sm sm:text-base truncate"></div>
+            <div id="rendir-subtitulo" class="text-xs text-slate-500"></div>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <span id="rendir-reloj" class="px-3 py-2 rounded-xl bg-slate-900 text-white font-mono text-sm font-bold">00:00</span>
+          <a id="rendir-link" href="#" target="_blank" rel="noopener" class="px-3 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50">Abrir cuadernillo en pestaña nueva</a>
+          <button type="button" id="rendir-btn-entregar" onclick="entregarOficial(false)" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-extrabold shadow-sm">Entregar y corregir</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        <div class="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+          <div class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-b border-slate-100 text-xs">
+            <span class="text-slate-500">Mostrando página <strong id="rendir-pagina" class="text-slate-800">1</strong> del cuadernillo</span>
+            <div class="flex flex-wrap gap-1.5" id="rendir-saltos"></div>
+          </div>
+          <iframe id="rendir-pdf" title="Cuadernillo oficial" class="w-full h-[70vh] lg:h-[76vh] bg-slate-100"></iframe>
+          <p class="px-3 py-2 text-[11px] text-slate-400 border-t border-slate-100">¿No se ve el cuadernillo (por ejemplo, en un celular)? Usa «Abrir cuadernillo en pestaña nueva» y marca tus respuestas aquí.</p>
+        </div>
+        <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col lg:max-h-[calc(76vh+76px)]">
+          <div id="rendir-cabecera" class="p-4 border-b border-slate-100 space-y-3"></div>
+          <div id="rendir-hoja" class="overflow-y-auto p-2 sm:p-3 space-y-0.5"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VISTA 2: TEMARIO OFICIAL ECEP 2026 ==================== -->
+    <section id="view-temario" class="hidden fade-in space-y-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-slate-100 pb-5">
+          <div>
+            <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 mb-1">
+              Instrumento CPEIP 2026 · Educación Básica Generalista
+            </span>
+            <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">Temario Oficial y Lista de Cotejo de Estudio</h2>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">
+              Marca los indicadores que ya dominas o has repasado. Tu progreso se guarda automáticamente en este dispositivo.
+            </p>
+          </div>
+
+          <!-- Progreso Global del Temario -->
+          <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200 min-w-[260px]">
+            <div class="flex items-center justify-between text-xs font-bold mb-1.5">
+              <span class="text-slate-600">Avance Global del Temario</span>
+              <span id="temario-progreso-texto" class="text-blue-700">0 / 0 (0%)</span>
+            </div>
+            <div class="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+              <div id="temario-progreso-barra" class="h-full bg-gradient-to-r from-blue-600 to-emerald-500 transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Buscador y Filtros del Temario -->
+        <div class="mt-5 flex flex-col sm:flex-row gap-3">
+          <div class="relative flex-1">
+            <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input type="text" id="buscador-temario" oninput="renderTemario()" placeholder="Buscar indicador por palabra clave (ej. conciencia fonológica, fracciones, pueblos originarios, vertebrados)..." class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600" />
+          </div>
+          <select id="filtro-dominio-temario" onchange="renderTemario()" class="rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-700">
+            <option value="todos">Todos los Dominios</option>
+            <option value="D1">Dominio 1: Lenguaje y Comunicación</option>
+            <option value="D2">Dominio 2: Matemática</option>
+            <option value="D3">Dominio 3: Historia, Geografía y Cs. Sociales</option>
+            <option value="D4">Dominio 4: Ciencias Naturales</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Contenedor Dinámico de los 4 Dominios -->
+      <div id="temario-dominios-container" class="space-y-6"></div>
+    </section>
+
+    <!-- ==================== VISTA 3: IMPORTAR PRUEBA CPEIP ==================== -->
+    <section id="view-importar" class="hidden fade-in space-y-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6 space-y-6">
+        <div class="border-b border-slate-100 pb-4">
+          <h2 class="text-xl font-extrabold text-slate-900">Importar Cuadernillo Oficial CPEIP (PDF / TXT)</h2>
+          <p class="text-xs sm:text-sm text-slate-500 mt-1">
+            Copia y pega el texto de las pruebas oficiales descargadas desde <strong>cpeip.cl</strong> junto con su hoja de respuestas para convertirlas en una práctica interactiva.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 space-y-4">
+            <div>
+              <label for="imp-texto" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                Texto de las preguntas (Formato: 1. Enunciado ... A) ... B) ... C) ... D) ...)
+              </label>
+              <textarea id="imp-texto" rows="12" placeholder="Pega aquí las preguntas del cuadernillo oficial. Ejemplo:&#10;&#10;1. Un docente de 2° básico trabaja la segmentación silábica con sus estudiantes. ¿Cuál de las siguientes actividades promueve directamente esta habilidad?&#10;A) Copiar diez palabras desde la pizarra.&#10;B) Dar un aplauso por cada golpe de voz al nombrar imágenes de animales.&#10;C) Memorizar el abecedario en orden alfabético.&#10;D) Identificar el título de un cuento en la portada." class="w-full rounded-xl border border-slate-300 p-3.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-600"></textarea>
+            </div>
+          </div>
+
+          <div class="space-y-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+            <div>
+              <label for="imp-claves" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                Pauta de Respuestas Correctas
+              </label>
+              <input type="text" id="imp-claves" placeholder="Ej: 1-B, 2-A, 3-D, 4-C  o  BADC" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-600" />
+              <p class="text-[11px] text-slate-500 mt-1">Acepta pares numerados (<code>1-B, 2-C</code>) o letras seguidas (<code>BCAD</code>).</p>
+            </div>
+
+            <div>
+              <label for="imp-ciclo" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Ciclo / Especialidad destino</label>
+              <select id="imp-ciclo" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium">
+                <option value="primer_ciclo">Primer Ciclo Generalista (1° a 4°)</option>
+                <option value="segundo_matematica">Segundo Ciclo · Matemática</option>
+                <option value="segundo_lenguaje">Segundo Ciclo · Lenguaje</option>
+                <option value="segundo_ciencias">Segundo Ciclo · Ciencias Naturales</option>
+                <option value="segundo_historia">Segundo Ciclo · Historia y Geografía</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="imp-dominio" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Dominio ECEP 2026 asociado</label>
+              <select id="imp-dominio" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium">
+                <option value="D1">Dominio 1: Lenguaje y Comunicación</option>
+                <option value="D2">Dominio 2: Matemática</option>
+                <option value="D3">Dominio 3: Historia, Geografía y Cs. Sociales</option>
+                <option value="D4">Dominio 4: Ciencias Naturales</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="imp-dimension" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Dimensión</label>
+              <select id="imp-dimension" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium">
+                <option value="didactico">Enseñanza-Aprendizaje (Didáctica)</option>
+                <option value="disciplinario">Conocimientos Relevantes (Disciplinario)</option>
+              </select>
+            </div>
+
+            <div class="pt-2 space-y-2">
+              <button type="button" onclick="procesarImportacionTexto()" class="w-full py-3 px-4 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold text-sm shadow-sm transition">
+                Incorporar Preguntas al Banco
+              </button>
+              <button type="button" onclick="cargarEjemploImportacion()" class="w-full py-2 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-semibold text-xs transition">
+                Cargar ejemplo de prueba para probar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VISTA 4: HISTORIAL Y DIAGNÓSTICO ==================== -->
+    <section id="view-historial" class="hidden fade-in space-y-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6">
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4 mb-5">
+          <div>
+            <h2 class="text-xl font-extrabold text-slate-900">Historial de Evaluaciones y Diagnóstico Docente</h2>
+            <p class="text-xs sm:text-sm text-slate-500 mt-0.5">Registro local de tus sesiones completadas y tramos referenciales CPEIP.</p>
+          </div>
+          <button type="button" onclick="solicitarLimpiarHistorial()" class="px-3.5 py-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition">
+            Limpiar historial
+          </button>
+        </div>
+
+        <div id="historial-lista" class="space-y-3"></div>
+      </div>
+    </section>
+
+    <!-- ==================== VISTA 5: SALA DE EVALUACIÓN ACTIVA ==================== -->
+    <section id="view-sala" class="hidden fade-in space-y-5">
+      <!-- Barra superior de estado de la sesión -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <span id="sala-badge-modo" class="px-3 py-1 rounded-full text-xs font-extrabold bg-blue-100 text-blue-800">Práctica Guiada</span>
+          <span class="text-sm font-bold text-slate-700">
+            Pregunta <span id="sala-num-actual" class="text-blue-700">1</span> de <span id="sala-num-total">10</span>
+          </span>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <div id="sala-timer-box" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 font-mono text-sm font-extrabold">
+            <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span id="sala-timer-text">30:00</span>
+          </div>
+
+          <button type="button" onclick="confirmarTerminarSesion()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold shadow-sm transition">
+            Finalizar y Revisar
+          </button>
+          <button type="button" onclick="confirmarAbandonarSesion()" class="px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-600 text-xs font-semibold transition">
+            Salir
+          </button>
+        </div>
+      </div>
+
+      <!-- Grid Principal: Tarjeta de Pregunta + Navegador Lateral -->
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+        <!-- Tarjeta de Pregunta -->
+        <div class="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-7 space-y-6">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+            <div class="flex flex-wrap items-center gap-2">
+              <span id="q-etiqueta-dominio" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-800 border border-indigo-200">Dominio 1</span>
+              <span id="q-etiqueta-subdominio" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700">1.2 Enseñanza-Aprendizaje</span>
+            </div>
+
+            <button type="button" id="btn-marcar-duda" onclick="toggleDudaActual()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-600 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-800 transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/></svg>
+              <span id="txt-marcar-duda">Marcar con duda</span>
+            </button>
+          </div>
+
+          <!-- Enunciado -->
+          <div id="q-enunciado" class="text-base sm:text-lg font-semibold text-slate-900 leading-relaxed whitespace-pre-line"></div>
+
+          <!-- Alternativas A, B, C, D -->
+          <div id="q-opciones" class="space-y-3"></div>
+
+          <!-- Retroalimentación Inmediata (Solo en Práctica Guiada tras responder) -->
+          <div id="q-feedback-box" class="hidden rounded-2xl p-5 border space-y-3 fade-in">
+            <div class="flex items-center gap-2">
+              <span id="q-feedback-badge" class="px-2.5 py-0.5 rounded-full text-xs font-extrabold"></span>
+              <span id="q-feedback-titulo" class="font-bold text-sm"></span>
+            </div>
+            <p id="q-feedback-explicacion" class="text-xs sm:text-sm text-slate-700 leading-relaxed"></p>
+            <div id="q-feedback-distractores" class="text-xs text-slate-600 bg-white/80 p-3.5 rounded-xl border border-slate-200/80 leading-relaxed"></div>
+          </div>
+
+          <!-- Controles Anterior / Siguiente -->
+          <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
+            <button type="button" id="btn-prev" onclick="navegarPregunta(-1)" class="px-4 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-sm font-bold disabled:opacity-40 transition">
+              ← Anterior
+            </button>
+            <button type="button" id="btn-next" onclick="navegarPregunta(1)" class="px-5 py-2.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold shadow-sm transition">
+              Siguiente →
+            </button>
+          </div>
+        </div>
+
+        <!-- Panel Navegador de Ítems -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 space-y-4">
+          <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-500">Hoja de Respuestas</h4>
+          <div id="sala-mapa-preguntas" class="grid grid-cols-5 gap-2"></div>
+          <div class="pt-3 border-t border-slate-100 space-y-1.5 text-[11px] text-slate-500">
+            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-blue-600 inline-block"></span> Respondida</div>
+            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-amber-400 inline-block"></span> Marcada con duda</div>
+            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded border border-slate-300 bg-white inline-block"></span> Sin responder</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VISTA 6: REVISIÓN FINAL Y DIAGNÓSTICO ==================== -->
+    <section id="view-revision" class="hidden fade-in space-y-6">
+      <!-- Resumen de Desempeño -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 border-b border-slate-100 pb-6">
+          <div>
+            <span class="text-xs font-extrabold uppercase tracking-wider text-blue-700">Informe Diagnóstico ECEP · Escuela Patrimonial California</span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">Resultados de tu Evaluación</h2>
+            <p id="rev-subtitulo" class="text-sm text-slate-500 mt-1"></p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-4">
+            <div class="bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 text-center">
+              <div class="text-xs font-bold text-slate-500 uppercase">Puntaje</div>
+              <div id="rev-puntaje" class="text-2xl font-extrabold text-slate-900">0 / 0</div>
+            </div>
+            <div class="bg-blue-50 border border-blue-200 rounded-2xl px-5 py-3 text-center">
+              <div class="text-xs font-bold text-blue-700 uppercase">Logro</div>
+              <div id="rev-porcentaje" class="text-2xl font-extrabold text-blue-900">0%</div>
+            </div>
+            <div id="rev-tramo-card" class="rounded-2xl px-5 py-3 text-center border">
+              <div class="text-xs font-bold uppercase opacity-80">Tramo Referencial</div>
+              <div id="rev-tramo" class="text-xl font-extrabold">Competente</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Desglose por Dominio 2026 -->
+        <div class="mt-6">
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-3">Desglose de Logro por Dominio Evaluado</h3>
+          <div id="rev-desglose-dominios" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"></div>
+        </div>
+
+        <!-- Botones de Acción Post-Evaluación -->
+        <div class="mt-6 pt-5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-wrap gap-2">
+            <button type="button" onclick="filtrarRevision('todas')" data-revfilter="todas" class="rev-filter-btn px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white transition">Todas</button>
+            <button type="button" onclick="filtrarRevision('incorrectas')" data-revfilter="incorrectas" class="rev-filter-btn px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">Incorrectas (<span id="rev-cnt-inc">0</span>)</button>
+            <button type="button" onclick="filtrarRevision('dudas')" data-revfilter="dudas" class="rev-filter-btn px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">Marcadas con duda (<span id="rev-cnt-duda">0</span>)</button>
+          </div>
+
+          <div class="flex flex-wrap gap-2.5">
+            <button type="button" id="btn-reintentar-falladas" onclick="reintentarIncorrectas()" class="hidden px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs sm:text-sm font-bold shadow-sm transition">
+              ↻ Reintentar solo las incorrectas
+            </button>
+            <button type="button" onclick="cambiarVista('config')" class="px-4 py-2.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white text-xs sm:text-sm font-bold shadow-sm transition">
+              Nueva Práctica
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detalle Pregunta por Pregunta -->
+      <div id="rev-detalle-lista" class="space-y-4"></div>
+    </section>
+
+  </main>
+
+  <!-- PIE DE PÁGINA INSTITUCIONAL -->
+  <footer class="bg-white border-t border-slate-200 mt-12 py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+      <div class="font-semibold text-slate-700">
+        Escuela Patrimonial California · Tomé, Región del Biobío, Chile
+      </div>
+      <div>
+        Alineado con el Instrumento de Evaluación de Conocimientos Específicos y Pedagógicos (ECEP) 2026 — CPEIP / MINEDUC.
+      </div>
+    </div>
+  </footer>
+
+  <!-- Datos de la plataforma: docentes con acceso y pruebas oficiales con su pauta -->
+  <script src="datos/usuarios.js"></script>
+  <script src="datos/pruebas_oficiales.js"></script>
+  <script>
+    // =========================================================================
+    // 1. TEMARIO OFICIAL ECEP 2026 - EDUCACIÓN BÁSICA GENERALISTA (CPEIP)
+    // =========================================================================
+    const TEMARIO_OFICIAL_2026 = [
+      {
+        codigo: 'D1',
+        titulo: 'DOMINIO 1: LENGUAJE Y COMUNICACIÓN',
+        color: 'blue',
+        subdominios: [
+          {
+            codigo: '1.1',
+            nombre: '1.1 Conocimientos relevantes de la asignatura de Lenguaje y Comunicación',
+            indicadores: [
+              { id: 'd1-1-1', texto: 'Distinguir características estructurales y finalidad de textos literarios narrativos (novela, cuento, mito, leyenda, fábula, relato de aventuras, cuentos folclóricos y de autor, historietas) en situaciones contextualizadas.' },
+              { id: 'd1-1-2', texto: 'Distinguir elementos presentes en la estructura de obras narrativas, tales como narrador (por grado de conocimiento y de participación), personajes, tiempo y espacio.' },
+              { id: 'd1-1-3', texto: 'Distinguir diversos textos no literarios (expositivos, explicativos, argumentativos, publicitarios, dialógicos) a partir de sus características formales (estructura textual, propósito y adecuación a la situación comunicativa) en situaciones contextualizadas.' }
+            ]
+          },
+          {
+            codigo: '1.2',
+            nombre: '1.2 Enseñanza-Aprendizaje en la asignatura de Lenguaje y Comunicación',
+            indicadores: [
+              { id: 'd1-2-1', texto: 'Seleccionar estrategias didácticas o actividades adecuadas para promover la comprensión lectora que se abordan en los distintos momentos de la lectura (antes, durante y después).' },
+              { id: 'd1-2-2', texto: 'Evaluar, a través de situaciones contextualizadas en el aula (por ejemplo, preguntas de comprensión lectora, tareas de lectura, estrategias de lectura, entre otras), los niveles de comprensión lectora correspondientes a primer ciclo de educación básica (literal, inferencial y crítico).' },
+              { id: 'd1-2-3', texto: 'Seleccionar estrategias didácticas o actividades para el aprendizaje de la gramática (morfosintaxis) en situaciones contextualizadas.' },
+              { id: 'd1-2-4', texto: 'Seleccionar estrategias didácticas o actividades para desarrollar la conciencia semántica y ampliar el vocabulario de los y las estudiantes de primer ciclo (identificación de las raíces, sufijos y prefijos de las palabras y realización de inferencias del significado de nuevas palabras a partir del contexto).' },
+              { id: 'd1-2-5', texto: 'Determinar actividades adecuadas para trabajar en las distintas fases de la escritura: planificación, textualización, revisión y edición.' },
+              { id: 'd1-2-6', texto: 'Seleccionar estrategias didácticas o actividades propias para el desarrollo de la comunicación oral (participación activa en conversaciones, fórmulas de cortesía, narración, recitación y expresión).' },
+              { id: 'd1-2-7', texto: 'Identificar actividades que promueven el desarrollo de las habilidades de conciencia fonológica (conciencia silábica y fonémica) en el contexto del aprendizaje de la lectura y escritura: reconocimiento de fonemas y sílabas iniciales y finales, segmentación fonológica (segmentar palabras en fonemas y sílabas), síntesis fonémica de las palabras y manipulación de fonemas para formar diferentes palabras.' },
+              { id: 'd1-2-8', texto: 'Analizar críticamente fragmentos de planificaciones o situaciones de clases para determinar su coherencia con el nivel y/o OA y/o el enfoque del currículum (comunicativo) para favorecer las condiciones para el aprendizaje.' },
+              { id: 'd1-2-9', texto: 'Relacionar actividades, estrategias o instrumentos pertinentes para evaluar los objetivos de aprendizaje de la asignatura de Lenguaje y Comunicación.' },
+              { id: 'd1-2-10', texto: 'Identificar los indicadores de evaluación y evidencias de desempeños que dan cuenta de los distintos objetivos de aprendizaje de la asignatura de Lenguaje y Comunicación.' },
+              { id: 'd1-2-11', texto: 'Caracterizar prácticas e interacciones pedagógicas que contribuyan a retroalimentar formativamente el aprendizaje de los estudiantes ante muestras de su desempeño en la asignatura de Lenguaje y Comunicación.' }
+            ]
+          }
+        ]
+      },
+      {
+        codigo: 'D2',
+        titulo: 'DOMINIO 2: MATEMÁTICA',
+        color: 'emerald',
+        subdominios: [
+          {
+            codigo: '2.1',
+            nombre: '2.1 Conocimientos relevantes de la asignatura de Matemática',
+            indicadores: [
+              { id: 'd2-1-1', texto: 'Resolver problemas o ejercicios que involucren operaciones combinadas.' },
+              { id: 'd2-1-2', texto: 'Identificar propiedades de la adición y la multiplicación y aplicarlas a la resolución de problemas o a ejercicios de igualdades o de operaciones.' },
+              { id: 'd2-1-3', texto: 'Resolver problemas que involucren contenidos sobre fracciones (fracciones de igual valor, comparación de fracciones, simplificación o amplificación de fracciones, ordenar fracciones).' },
+              { id: 'd2-1-4', texto: 'Utilizar distintas formas de representaciones (por ejemplo, traducir gráficos a tablas, gráficos a expresiones algebraicas, entre otros) en la resolución de ecuaciones e inecuaciones.' },
+              { id: 'd2-1-5', texto: 'Resolver problemas que involucren experimentos aleatorios lúdicos y cotidianos, aplicando nociones básicas de probabilidades.' },
+              { id: 'd2-1-6', texto: 'Resolver problemas o ejercicios que involucren las propiedades de figuras o cuerpos geométricos (cálculo de ángulos, área, perímetro, volumen, entre otros).' }
+            ]
+          },
+          {
+            codigo: '2.2',
+            nombre: '2.2 Enseñanza-Aprendizaje en la asignatura de Matemática',
+            indicadores: [
+              { id: 'd2-2-1', texto: 'Seleccionar estrategias o actividades didácticas que consideren distintos tipos de representación para el proceso de comprensión del sistema de numeración decimal, involucrando contenidos relevantes, tales como lectura y escritura de números, conteo, orden y comparación de números, descomposición y composición aditiva de números y valor posicional.' },
+              { id: 'd2-2-2', texto: 'Seleccionar estrategias o actividades didácticas que consideren distintos tipos de representación para la comprensión de los conceptos relevantes del eje Patrones y Álgebra, tales como patrones numéricos, igualdad y desigualdad, y ecuaciones e inecuaciones.' },
+              { id: 'd2-2-3', texto: 'Seleccionar estrategias o actividades didácticas que favorezcan el aprendizaje de los contenidos relevantes del eje Geometría, tales como localización absoluta y relativa, características y elementos de figuras 2D y 3D, transformaciones isométricas (rotación, traslación y reflexión), línea de simetría y ángulo.' },
+              { id: 'd2-2-4', texto: 'Seleccionar estrategias o actividades didácticas que favorezcan el aprendizaje de los contenidos relevantes del eje Datos y Probabilidades, tales como construcción, lectura e interpretación de pictogramas y gráficos de barra simple; recolección, registro y organización de datos (obtenidos a través de encuestas o juegos aleatorios) en pictogramas, tablas y gráficos.' },
+              { id: 'd2-2-5', texto: 'Seleccionar recursos didácticos apropiados para abordar diferentes objetivos de aprendizaje de la asignatura de Matemática.' },
+              { id: 'd2-2-6', texto: 'Distinguir estrategias para enfrentar las dificultades que se presentan en el proceso de aprendizaje, con el fin de retroalimentar y promover el aprendizaje a partir del error, en la asignatura de Matemática (por ejemplo, reformular ejemplos, simplificar un problema, utilizar otros tipos de representaciones, entre otras).' },
+              { id: 'd2-2-7', texto: 'Seleccionar actividades, estrategias o instrumentos pertinentes para evaluar los objetivos de aprendizaje de la asignatura de Matemática.' },
+              { id: 'd2-2-8', texto: 'Identificar los indicadores de evaluación y evidencias de desempeños que dan cuenta de los distintos objetivos de aprendizaje de la asignatura de Matemática.' },
+              { id: 'd2-2-9', texto: 'Caracterizar prácticas e interacciones pedagógicas que contribuyen a retroalimentar formativamente el aprendizaje de los estudiantes ante muestras de su desempeño en la asignatura de Matemática.' },
+              { id: 'd2-2-10', texto: 'Identificar los conocimientos previos requeridos para abordar los distintos aprendizajes de la asignatura de Matemática.' }
+            ]
+          }
+        ]
+      },
+      {
+        codigo: 'D3',
+        titulo: 'DOMINIO 3: HISTORIA, GEOGRAFÍA Y CIENCIAS SOCIALES',
+        color: 'amber',
+        subdominios: [
+          {
+            codigo: '3.1',
+            nombre: '3.1 Conocimientos relevantes de la asignatura de Historia, Geografía y Ciencias Sociales',
+            indicadores: [
+              { id: 'd3-1-1', texto: 'Identificar la organización política, económica y cultural y sus transformaciones a lo largo de la historia de los pueblos originarios de Chile (atacameños, changos, aymaras, diaguitas, mapuche, chonos, cuncos, alacalufes (kawéskar), onas o selk’nam, yaganes, rapa nui) para ser implementada en situaciones de aula.' },
+              { id: 'd3-1-2', texto: 'Relacionar los recursos naturales renovables y no renovables de nuestro país con las principales actividades económicas, el desarrollo sostenible y sus efectos en el medio ambiente.' },
+              { id: 'd3-1-3', texto: 'Aplicar conceptos democráticos (libertad, fraternidad, igualdad ante la ley, respeto a los derechos fundamentales, democracia, no discriminación, participación ciudadana) en situaciones concretas.' }
+            ]
+          },
+          {
+            codigo: '3.2',
+            nombre: '3.2 Enseñanza-Aprendizaje en la asignatura de Historia, Geografía y Ciencias Sociales',
+            indicadores: [
+              { id: 'd3-2-1', texto: 'Seleccionar estrategias pedagógicas (actividades, representaciones, metáforas, ejemplos, modelamiento, preguntas, entre otras) para favorecer el aprendizaje de los objetivos que componen el eje de Formación Ciudadana.' },
+              { id: 'd3-2-2', texto: 'Seleccionar estrategias pedagógicas que favorezcan el desarrollo de las habilidades propias de la asignatura de Historia, Geografía y Ciencias Sociales (pensamiento temporal y espacial, análisis y trabajo con fuentes, pensamiento crítico y comunicación).' },
+              { id: 'd3-2-3', texto: 'Seleccionar recursos didácticos (ilustraciones, demostraciones, textos multimodales, explicación, descripción, flujos y diagramas, entre otros) apropiados para abordar diferentes objetivos de aprendizaje de la asignatura de Historia, Geografía y Ciencias Sociales.' },
+              { id: 'd3-2-4', texto: 'Identificar errores comunes en la asignatura de Historia, Geografía y Ciencias Sociales, con el fin de retroalimentar y promover el aprendizaje a partir del error.' },
+              { id: 'd3-2-5', texto: 'Identificar los indicadores de evaluación y evidencias de desempeños que dan cuenta del nivel de logro de los distintos objetivos de aprendizaje de la asignatura de Historia, Geografía y Ciencias Sociales.' },
+              { id: 'd3-2-6', texto: 'Caracterizar prácticas e interacciones pedagógicas que contribuyen a retroalimentar formativamente el aprendizaje de los estudiantes ante evidencias de desempeños, en la asignatura de Historia, Geografía y Ciencias Sociales.' }
+            ]
+          }
+        ]
+      },
+      {
+        codigo: 'D4',
+        titulo: 'DOMINIO 4: CIENCIAS NATURALES',
+        color: 'purple',
+        subdominios: [
+          {
+            codigo: '4.1',
+            nombre: '4.1 Conocimientos relevantes de la asignatura de Ciencias Naturales',
+            indicadores: [
+              { id: 'd4-1-1', texto: 'Clasificar animales vertebrados e invertebrados según su morfología, hábitos alimentarios, refugio, cubierta corporal, forma de desplazamiento, formas de reproducción y ciclo de vida.' },
+              { id: 'd4-1-2', texto: 'Identificar las características de componentes del Universo, tales como estrellas, planetas, galaxias, satélites, sistema solar.' }
+            ]
+          },
+          {
+            codigo: '4.2',
+            nombre: '4.2 Enseñanza-Aprendizaje en la asignatura de Ciencias Naturales',
+            indicadores: [
+              { id: 'd4-2-1', texto: 'Proponer estrategias para enfrentar las dificultades que se presentan en el proceso de aprendizaje de la asignatura de Ciencias Naturales, de modo que estas puedan ser superadas (por ejemplo, reformular ejemplos, simplificar un problema, utilizar otros tipos de representaciones, entre otras).' },
+              { id: 'd4-2-2', texto: 'Seleccionar actividades o estrategias pedagógicas para trabajar los objetivos de aprendizaje del eje Ciencias de la Vida, acorde con la investigación científica escolar (etapas de investigación científica escolar).' },
+              { id: 'd4-2-3', texto: 'Seleccionar actividades o estrategias pedagógicas para la enseñanza-aprendizaje de los objetivos del eje Ciencias de la Tierra y el Universo, acorde con la investigación científica escolar (etapas de investigación científica escolar).' },
+              { id: 'd4-2-4', texto: 'Seleccionar actividades, estrategias o instrumentos pertinentes para evaluar los objetivos de aprendizaje de la asignatura de Ciencias Naturales.' },
+              { id: 'd4-2-5', texto: 'Caracterizar prácticas e interacciones pedagógicas que contribuyen a retroalimentar formativamente el aprendizaje ante evidencias de desempeños, en la asignatura de Ciencias Naturales.' },
+              { id: 'd4-2-6', texto: 'Analizar críticamente situaciones de aula, decisiones e intervenciones pedagógicas en la enseñanza-aprendizaje de las Ciencias Naturales.' }
+            ]
+          }
+        ]
+      }
+    ];
+
+    // =========================================================================
+    // 2. BANCO DE PREGUNTAS PRECARGADO (ALINEADO A TEMARIO ECEP 2026)
+    // =========================================================================
+    const BANCO_PREGUNTAS_BASE = [
+      // --- DOMINIO 1: LENGUAJE Y COMUNICACIÓN (PRIMER CICLO) ---
+      {
+        id: 'ecep-d1-01',
+        ciclo: 'primer_ciclo',
+        dominio: 'D1',
+        dominioNombre: 'Dominio 1: Lenguaje y Comunicación',
+        subdominio: '1.2 Enseñanza-Aprendizaje (Conciencia Fonológica)',
+        dimension: 'didactico',
+        enunciado: 'Una docente de 1° básico busca desarrollar la manipulación fonémica en sus estudiantes como parte del eje de lectura inicial. ¿Cuál de las siguientes actividades responde específicamente a esta habilidad?',
+        opciones: [
+          'A) Pedir a los estudiantes que aplaudan por cada sílaba que escuchan al pronunciar la palabra "mariposa".',
+          'B) Solicitar a los estudiantes que digan qué palabra nueva se forma si a "pato" se le cambia el sonido inicial /p/ por /g/.',
+          'C) Mostrar tarjetas con las vocales escritas para que las copien en sus cuadernos de caligrafía.',
+          'D) Leer en voz alta un cuento y preguntar qué personaje les gustó más.'
+        ],
+        correcta: 1,
+        explicacion: 'La manipulación fonémica implica operar mentalmente con los fonemas individuales (sustituir, omitir o agregar sonidos) para formar nuevas palabras ("pato" → "gato"), habilidad clave declarada en el subdominio 1.2 del temario CPEIP 2026.',
+        distractores: 'A) Corresponde a segmentación silábica (conciencia silábica, no manipulación fonémica). C) Trabaja grafomotricidad y correspondencia grafema-fonema inicial. D) Apunta a comprensión oral y valoración personal.'
+      },
+      {
+        id: 'ecep-d1-02',
+        ciclo: 'primer_ciclo',
+        dominio: 'D1',
+        dominioNombre: 'Dominio 1: Lenguaje y Comunicación',
+        subdominio: '1.1 Conocimientos relevantes (Narratología)',
+        dimension: 'disciplinario',
+        enunciado: 'Lea el siguiente fragmento narrativo:\n"Cuando llegué a la caleta de Coliumo aquella tarde de invierno, supe de inmediato que los pescadores ocultaban algo. Yo solo observaba desde el muelle cómo descargaban las redes en silencio, sin atreverme a intervenir en su secreto."\n\nSegún su grado de participación y conocimiento, ¿cómo se clasifica el narrador del fragmento?',
+        opciones: [
+          'A) Narrador heterodiegético omnisciente, porque conoce todos los pensamientos de los pescadores.',
+          'B) Narrador homodiegético testigo con focalización interna, porque participa en el mundo narrado relatando en primera persona lo que percibe.',
+          'C) Narrador heterodiegético de conocimiento relativo, porque relata desde fuera de la historia en tercera persona.',
+          'D) Narrador autodiegético protagonista, porque es el centro exclusivo de la acción de descarga de redes.'
+        ],
+        correcta: 1,
+        explicacion: 'El narrador utiliza la primera persona gramatical ("llegué", "supe", "observaba"), por lo que forma parte de la historia (homodiegético), cumpliendo un rol de testigo que observa las acciones de los pescadores desde su propia perspectiva limitada.',
+        distractores: 'A) y C) Los narradores heterodiegéticos no pertenecen al mundo narrado (usan 3ª persona). D) El narrador autodiegético es el protagonista central de los hechos, mientras aquí actúa como observador testigo.'
+      },
+      {
+        id: 'ecep-d1-03',
+        ciclo: 'primer_ciclo',
+        dominio: 'D1',
+        dominioNombre: 'Dominio 1: Lenguaje y Comunicación',
+        subdominio: '1.2 Enseñanza-Aprendizaje (Fases de la Escritura)',
+        dimension: 'didactico',
+        enunciado: 'En una clase de 3° básico, los estudiantes ya escribieron el primer borrador de una carta dirigida al director de la escuela solicitando más áreas verdes. De acuerdo con el proceso didáctico de la escritura, ¿qué actividad corresponde implementar en la fase de REVISIÓN?',
+        opciones: [
+          'A) Realizar una lluvia de ideas sobre los beneficios de plantar árboles en el patio.',
+          'B) Intercambiar los borradores en parejas utilizando una pauta breve para verificar si el propósito de la carta es claro y si las ideas están bien conectadas, sugiriendo mejoras.',
+          'C) Pasar en limpio el texto final en una hoja decorada para entregarlo en dirección.',
+          'D) Subrayar todos los sustantivos propios presentes en un texto modelo antes de empezar a escribir.'
+        ],
+        correcta: 1,
+        explicacion: 'En la fase de revisión se evalúa y reajusta el contenido, la coherencia, la adecuación al destinatario y la cohesión del borrador antes de la edición final y publicación.',
+        distractores: 'A) y D) Corresponden a la fase previa de planificación y activación. C) Corresponde a la etapa final de edición y publicación.'
+      },
+      {
+        id: 'ecep-d1-04',
+        ciclo: 'primer_ciclo',
+        dominio: 'D1',
+        dominioNombre: 'Dominio 1: Lenguaje y Comunicación',
+        subdominio: '1.2 Enseñanza-Aprendizaje (Conciencia Semántica)',
+        dimension: 'didactico',
+        enunciado: 'Durante la lectura de un texto informativo en 4° básico aparece la palabra "submarino". El docente guía a los estudiantes para que identifiquen la palabra base "mar" y el elemento inicial "sub-", deduciendo juntos que significa "que está o se mueve bajo el mar". ¿Qué estrategia didáctica está aplicando?',
+        opciones: [
+          'A) Reconocimiento de familias de palabras mediante análisis morfológico (raíz y prefijo) para desarrollar la conciencia semántica.',
+          'B) Decodificación silábica directa mediante lectura coral en voz alta.',
+          'C) Memorización de definiciones literales extraídas del diccionario escolar.',
+          'D) Identificación de conectores temporales en textos expositivos.'
+        ],
+        correcta: 0,
+        explicacion: 'El análisis de raíces, prefijos y sufijos permite a los estudiantes inferir el significado de palabras desconocidas y ampliar su vocabulario comprensivo (indicador explícito del subdominio 1.2).',
+        distractores: 'B) Se centra solo en la fluidez oral sin abordar el significado. C) No recurre al diccionario, sino a la inferencia morfológica. D) No guarda relación con el léxico.'
+      },
+      {
+        id: 'ecep-d1-05',
+        ciclo: 'primer_ciclo',
+        dominio: 'D1',
+        dominioNombre: 'Dominio 1: Lenguaje y Comunicación',
+        subdominio: '1.1 Conocimientos relevantes (Textos No Literarios)',
+        dimension: 'disciplinario',
+        enunciado: 'Un texto publicado en el diario mural escolar expone las razones por las cuales se debe reducir el uso de plásticos de un solo uso en los recreos, respaldando su postura con datos sobre contaminación costera y llamando a la comunidad a usar botellas reutilizables. ¿A qué tipología textual corresponde?',
+        opciones: [
+          'A) Texto narrativo literario.',
+          'B) Texto argumentativo.',
+          'C) Texto instructivo.',
+          'D) Texto dialógico dramático.'
+        ],
+        correcta: 1,
+        explicacion: 'El texto presenta una tesis o postura (reducir plásticos), argumentos respaldados con evidencia y una finalidad persuasiva dirigida a modificar conductas de los receptores, rasgos propios del texto argumentativo.',
+        distractores: 'A) No relata hechos ficticios. C) No entrega una secuencia de pasos procedimentales. D) No está estructurado mediante intervenciones de interlocutores.'
+      },
+
+      // --- DOMINIO 2: MATEMÁTICA (PRIMER CICLO) ---
+      {
+        id: 'ecep-d2-01',
+        ciclo: 'primer_ciclo',
+        dominio: 'D2',
+        dominioNombre: 'Dominio 2: Matemática',
+        subdominio: '2.1 Conocimientos relevantes (Fracciones)',
+        dimension: 'disciplinario',
+        enunciado: 'Para preparar una receta escolar se necesitan 3/4 de litro de leche. Si en la cocina solo hay envases medidores de 1/8 de litro, ¿cuántos envases de 1/8 se requieren para completar exactamente la cantidad solicitada y cuál es la relación matemática involucrada?',
+        opciones: [
+          'A) 4 envases, porque al sumar 1 al numerador y al denominador de 3/4 se obtiene 4/5.',
+          'B) 6 envases, porque al amplificar 3/4 por 2 se obtiene la fracción equivalente 6/8.',
+          'C) 3 envases, porque el numerador indica directamente la cantidad de envases necesarios.',
+          'D) 8 envases, porque el denominador del envase medidor determina el total de partes.'
+        ],
+        correcta: 1,
+        explicacion: 'Amplificando 3/4 por 2 (multiplicando numerador y denominador por 2) se obtiene la fracción equivalente 6/8, lo que equivale a 6 veces 1/8 de litro.',
+        distractores: 'A) Sumar una constante al numerador y denominador no conserva el valor de la fracción. C) y D) Ignoran la equivalencia entre cuartos y octavos.'
+      },
+      {
+        id: 'ecep-d2-02',
+        ciclo: 'primer_ciclo',
+        dominio: 'D2',
+        dominioNombre: 'Dominio 2: Matemática',
+        subdominio: '2.2 Enseñanza-Aprendizaje (Tratamiento del Error)',
+        dimension: 'didactico',
+        enunciado: 'Al resolver la sustracción 402 − 158, un estudiante de 3° básico escribe como resultado 356, explicando: "A 8 le quité 2 y me dio 6; a 5 le quité 0 y me dio 5; y a 4 le quité 1 y me dio 3". ¿Cuál es el origen conceptual del error y qué estrategia didáctica es más pertinente?',
+        opciones: [
+          'A) El estudiante desconoce las tablas de sumar; debe practicar cálculo mental rápido de dígitos.',
+          'B) El estudiante aplica una regla errónea ("restar siempre el dígito menor al mayor en cada columna") por falta de comprensión del valor posicional y el reagrupamiento; se debe trabajar con bloques multibase (COPISI) el canje de centenas a decenas y unidades.',
+          'C) El estudiante confunde el signo de sustracción con el de adición; se recomienda encerrar el signo menos con lápiz rojo.',
+          'D) El estudiante tiene dificultades de alineación espacial; se debe usar cuaderno de cuadrícula grande.'
+        ],
+        correcta: 1,
+        explicacion: 'Este error clásico evidencia una comprensión superficial del algoritmo posicional: el niño evita el canje restando el menor del mayor en cada posición. Representar 402 con material concreto (bloques base 10) permite visualizar el desagrupamiento de 1 centena en 10 decenas y 1 decena en 10 unidades.',
+        distractores: 'A), C) y D) Diagnostican causas superficiales o mecánicas que no resuelven la comprensión del sistema decimal y el canje.'
+      },
+      {
+        id: 'ecep-d2-03',
+        ciclo: 'primer_ciclo',
+        dominio: 'D2',
+        dominioNombre: 'Dominio 2: Matemática',
+        subdominio: '2.2 Enseñanza-Aprendizaje (Geometría e Isometrías)',
+        dimension: 'didactico',
+        enunciado: 'En una clase de 4° básico sobre transformaciones isométricas, la profesora pide a los estudiantes doblar una hoja cuadriculada por una línea vertical marcada con rojo, calcar un triángulo dibujado a la izquierda y observar cómo queda al desdoblar la hoja. ¿Qué transformación isométrica y propiedad están explorando?',
+        opciones: [
+          'A) Traslación, porque la figura se desplaza horizontalmente manteniendo su orientación original.',
+          'B) Reflexión (simetría axial), porque la figura se invierte respecto a un eje de simetría conservando su forma y tamaño.',
+          'C) Rotación en 90°, porque la figura gira en torno a uno de sus vértices.',
+          'D) Homotecia, porque la figura duplica el área de su superficie al desdoblarse.'
+        ],
+        correcta: 1,
+        explicacion: 'El plegado sobre un eje reproduce una reflexión axial: cada punto de la figura original queda a la misma distancia del eje de simetría que su imagen reflejada, conservando medidas de lados y ángulos (isometría).',
+        distractores: 'A) En la traslación no hay inversión especular. C) La rotación requiere un centro y ángulo de giro. D) La homotecia altera el tamaño y no es una isometría.'
+      },
+      {
+        id: 'ecep-d2-04',
+        ciclo: 'primer_ciclo',
+        dominio: 'D2',
+        dominioNombre: 'Dominio 2: Matemática',
+        subdominio: '2.1 Conocimientos relevantes (Propiedades de Operaciones)',
+        dimension: 'disciplinario',
+        enunciado: 'Para calcular mentalmente el producto 18 × 5, una estudiante descompone el 18 y realiza el siguiente procedimiento: (10 + 8) × 5 = (10 × 5) + (8 × 5) = 50 + 40 = 90. ¿Qué propiedad matemática fundamenta la validez de su estrategia?',
+        opciones: [
+          'A) Propiedad asociativa de la adición.',
+          'B) Propiedad distributiva de la multiplicación respecto de la adición.',
+          'C) Propiedad conmutativa de la multiplicación.',
+          'D) Propiedad del elemento neutro multiplicativo.'
+        ],
+        correcta: 1,
+        explicacion: 'La propiedad distributiva establece que a × (b + c) = (a × b) + (a × c), fundamento clave del cálculo mental y de los algoritmos de multiplicación en Educación Básica.',
+        distractores: 'A) La asociatividad reagrupa sumandos sin distribuir un factor. C) La conmutatividad invierte el orden de los factores (18 × 5 = 5 × 18). D) El elemento neutro es multiplicar por 1.'
+      },
+      {
+        id: 'ecep-d2-05',
+        ciclo: 'primer_ciclo',
+        dominio: 'D2',
+        dominioNombre: 'Dominio 2: Matemática',
+        subdominio: '2.1 Conocimientos relevantes (Geometría: Área y Perímetro)',
+        dimension: 'disciplinario',
+        enunciado: 'Un huerto escolar rectangular tiene un perímetro de 24 metros. Si su largo mide el doble de su ancho, ¿cuál es el área del huerto?',
+        opciones: [
+          'A) 24 m²',
+          'B) 32 m²',
+          'C) 48 m²',
+          'D) 128 m²'
+        ],
+        correcta: 1,
+        explicacion: 'Si el ancho es "a" y el largo es "2a", el perímetro es 2(a + 2a) = 6a = 24 m → a = 4 m (ancho) y largo = 8 m. Por tanto, el área es 4 m × 8 m = 32 m².',
+        distractores: 'A) Confunde el valor numérico del perímetro con el área. C) y D) Resultan de omitir la división por 2 del semiperímetro (asumir a + 2a = 24).'
+      },
+
+      // --- DOMINIO 3: HISTORIA, GEOGRAFÍA Y CIENCIAS SOCIALES (PRIMER CICLO) ---
+      {
+        id: 'ecep-d3-01',
+        ciclo: 'primer_ciclo',
+        dominio: 'D3',
+        dominioNombre: 'Dominio 3: Historia, Geografía y Cs. Sociales',
+        subdominio: '3.1 Conocimientos relevantes (Pueblos Originarios de Chile)',
+        dimension: 'disciplinario',
+        enunciado: 'En una unidad sobre pueblos originarios de Chile en 2° básico, se comparan los modos de vida según su adaptación al entorno geográfico. ¿Cuál de las siguientes asociaciones entre pueblo originario, zona geográfica y modo de vida tradicional es correcta?',
+        opciones: [
+          'A) Diaguitas — Canales australes — Nómades canoeros recolectores de mariscos.',
+          'B) Kawéskar (alacalufes) — Canales y fiordos de la zona austral — Nómades canoeros dedicados a la caza marina y recolección.',
+          'C) Selk’nam (onas) — Altiplano del Norte Grande — Sedentarios agricultores en terrazas de cultivo.',
+          'D) Atacameños (lickanantay) — Isla de Rapa Nui — Navegantes polinésicos constructores de moáis.'
+        ],
+        correcta: 1,
+        explicacion: 'El pueblo kawéskar (alacalufe) habitó históricamente los canales patagónicos y fueguinos, desarrollando una cultura nómade canoera altamente adaptada al medio marítimo austral (tal como exige el subdominio 3.1 del temario 2026).',
+        distractores: 'A) Los diaguitas fueron sedentarios agroalfareros de los valles transversales del Norte Chico. C) Los selk’nam fueron cazadores-recolectores terrestres de Tierra del Fuego. D) Los atacameños habitaron los oasis y salares del desierto de Atacama.'
+      },
+      {
+        id: 'ecep-d3-02',
+        ciclo: 'primer_ciclo',
+        dominio: 'D3',
+        dominioNombre: 'Dominio 3: Historia, Geografía y Cs. Sociales',
+        subdominio: '3.1 Conocimientos relevantes (Recursos Naturales y Sostenibilidad)',
+        dimension: 'disciplinario',
+        enunciado: 'Al analizar las actividades económicas de Chile en 4° básico, un docente pide clasificar los recursos naturales según su capacidad de regeneración. ¿Cuál de las siguientes situaciones ejemplifica el uso sostenible de un recurso natural renovable?',
+        opciones: [
+          'A) Extraer cobre de un yacimiento a rajo abierto sin plan de cierre ambiental.',
+          'B) Respetar los períodos de veda biológica de la merluza común y la reineta en las caletas pesqueras para permitir su reproducción.',
+          'C) Aumentar indefinidamente la extracción de carbón mineral para generación termoeléctrica.',
+          'D) Talar bosque nativo sin reforestación para habilitar suelos industriales.'
+        ],
+        correcta: 1,
+        explicacion: 'Los recursos pesqueros son renovables siempre que se respeten sus ciclos biológicos de reproducción (vedas y cuotas), garantizando su disponibilidad para generaciones futuras (desarrollo sostenible).',
+        distractores: 'A) y C) El cobre y el carbón son recursos no renovables. D) Aunque el bosque es potencialmente renovable, la tala sin reposición constituye sobreexplotación no sostenible.'
+      },
+      {
+        id: 'ecep-d3-03',
+        ciclo: 'primer_ciclo',
+        dominio: 'D3',
+        dominioNombre: 'Dominio 3: Historia, Geografía y Cs. Sociales',
+        subdominio: '3.2 Enseñanza-Aprendizaje (Formación Ciudadana)',
+        dimension: 'didactico',
+        enunciado: 'En un curso de 3° básico surge un conflicto porque algunos estudiantes impiden que dos compañeras participen en un partido de fútbol durante el recreo argumentando que "es un juego solo para niños". ¿Qué estrategia pedagógica promueve de mejor manera los objetivos de Formación Ciudadana y derechos fundamentales?',
+        opciones: [
+          'A) Prohibir el uso de balones durante los recreos para evitar futuras discusiones.',
+          'B) Facilitar una asamblea de curso donde analicen el principio de igualdad ante la ley y no discriminación, acordando democráticamente reglas inclusivas de uso de la cancha.',
+          'C) Ignorar el conflicto para que los estudiantes lo resuelvan solos sin intervención adulta.',
+          'D) Dividir el patio permanentemente en una zona exclusiva para niños y otra para niñas.'
+        ],
+        correcta: 1,
+        explicacion: 'Abordar conflictos cotidianos mediante el diálogo deliberativo y la construcción democrática de acuerdos vincula directamente los conceptos de igualdad, no discriminación y participación ciudadana con la experiencia escolar.',
+        distractores: 'A) y D) Evaden el aprendizaje ciudadano mediante medidas punitivas o segregadoras. C) Omite el rol formativo del docente ante una situación de exclusión.'
+      },
+      {
+        id: 'ecep-d3-04',
+        ciclo: 'primer_ciclo',
+        dominio: 'D3',
+        dominioNombre: 'Dominio 3: Historia, Geografía y Cs. Sociales',
+        subdominio: '3.2 Enseñanza-Aprendizaje (Habilidades de Pensamiento Histórico)',
+        dimension: 'didactico',
+        enunciado: 'Una profesora de 4° básico entrega a sus estudiantes dos testimonios breves sobre la fundación de su localidad: una crónica escrita por una autoridad de la época y una carta familiar de un trabajador portuario. Luego les pide comparar qué aspectos destaca cada autor. ¿Qué habilidad disciplinar está desarrollando principalmente?',
+        opciones: [
+          'A) Ubicación espacial mediante coordenadas geográficas.',
+          'B) Análisis y trabajo con fuentes primarias, reconociendo distintas perspectivas sobre un mismo hecho.',
+          'C) Memorización cronológica de fechas de fundación.',
+          'D) Cálculo de densidad poblacional.'
+        ],
+        correcta: 1,
+        explicacion: 'Contrastar relatos de distintos actores sociales frente a un mismo acontecimiento desarrolla la habilidad de análisis de fuentes y multiperspectividad histórica.',
+        distractores: 'A) y D) Corresponden a habilidades geográficas cuantitativas. C) Apunta a memorización mecánica, no a indagación histórica.'
+      },
+
+      // --- DOMINIO 4: CIENCIAS NATURALES (PRIMER CICLO) ---
+      {
+        id: 'ecep-d4-01',
+        ciclo: 'primer_ciclo',
+        dominio: 'D4',
+        dominioNombre: 'Dominio 4: Ciencias Naturales',
+        subdominio: '4.1 Conocimientos relevantes (Clasificación Animal)',
+        dimension: 'disciplinario',
+        enunciado: 'Durante una salida pedagógica a la costa de Tomé, los estudiantes observan un lobo marino, una gaviota, un choro zapato (mitílido) y una estrella de mar. Si el docente les pide agrupar aquellos que poseen columna vertebral y cráneo, ¿cuáles corresponden a vertebrados y qué característica reproductiva los diferencia entre sí?',
+        opciones: [
+          'A) El lobo marino y la gaviota son vertebrados; el lobo marino es vivíparo (mamífero) y la gaviota es ovípara (ave).',
+          'B) La gaviota y la estrella de mar son vertebrados; ambos tienen reproducción ovípara.',
+          'C) Solo el lobo marino es vertebrado, porque las aves tienen huesos huecos sin columna vertebral.',
+          'D) El choro zapato y el lobo marino son vertebrados marinos porque ambos poseen cubierta protectora.'
+        ],
+        correcta: 0,
+        explicacion: 'Tanto el lobo marino (mamífero marino) como la gaviota (ave) pertenecen al subfilo de los vertebrados, diferenciándose en su cubierta corporal (pelos vs. plumas) y reproducción (vivípara con lactancia vs. ovípara). El choro zapato (molusco) y la estrella de mar (equinodermo) son invertebrados.',
+        distractores: 'B) La estrella de mar es un invertebrado equinodermo. C) Las aves sí poseen columna vertebral. D) La concha del molusco es un exoesqueleto calcáreo, no columna vertebral.'
+      },
+      {
+        id: 'ecep-d4-02',
+        ciclo: 'primer_ciclo',
+        dominio: 'D4',
+        dominioNombre: 'Dominio 4: Ciencias Naturales',
+        subdominio: '4.1 Conocimientos relevantes (Componentes del Universo)',
+        dimension: 'disciplinario',
+        enunciado: 'En 3° básico se estudian los componentes del Sistema Solar y sus movimientos. ¿Cuál de las siguientes afirmaciones distingue correctamente entre una estrella, un planeta y un satélite natural?',
+        opciones: [
+          'A) Los planetas emiten luz propia mediante fusión nuclear, mientras que las estrellas solo reflejan la luz de sus satélites.',
+          'B) El Sol es una estrella que emite luz y calor propios; la Tierra es un planeta que orbita alrededor del Sol reflejando su luz; y la Luna es un satélite natural que orbita alrededor de la Tierra.',
+          'C) Las galaxias son satélites naturales que giran alrededor de un único planeta gigante.',
+          'D) La Luna emite luz propia durante la fase de luna llena debido a su alta temperatura superficial.'
+        ],
+        correcta: 1,
+        explicacion: 'Las estrellas (como el Sol) generan radiación propia; los planetas orbitan una estrella sin emitir luz propia; y los satélites naturales (como la Luna) orbitan alrededor de un planeta.',
+        distractores: 'A) y D) Atribuyen erróneamente luz propia a planetas o satélites. C) Una galaxia es una agrupación masiva de millones de estrellas, gas y polvo.'
+      },
+      {
+        id: 'ecep-d4-03',
+        ciclo: 'primer_ciclo',
+        dominio: 'D4',
+        dominioNombre: 'Dominio 4: Ciencias Naturales',
+        subdominio: '4.2 Enseñanza-Aprendizaje (Investigación Científica Escolar)',
+        dimension: 'didactico',
+        enunciado: 'Un docente de 2° básico plantea la pregunta: "¿Qué necesitan las semillas de poroto para germinar?". Para trabajar las etapas de la investigación científica escolar, divide al curso en grupos que preparan vasos con algodón húmedo con luz, algodón húmedo en oscuridad, y algodón seco con luz. Antes de iniciar los registros semanales, ¿qué etapa metodológica debe guiar el docente?',
+        opciones: [
+          'A) Comunicar los resultados finales mediante un afiche.',
+          'B) Formular predicciones fundamentadas sobre lo que ocurrirá en cada vaso a partir de sus conocimientos previos.',
+          'C) Copiar desde la pizarra las partes internas de la semilla de dicotiledónea.',
+          'D) Calificar con nota sumativa qué grupo trajo los materiales más decorados.'
+        ],
+        correcta: 1,
+        explicacion: 'En el ciclo de indagación científica escolar (Observar/Preguntar → Predecir → Experimentar/Registrar → Analizar → Comunicar), formular predicciones antes de recolectar evidencia permite contrastar las ideas previas con los resultados empíricos.',
+        distractores: 'A) La comunicación ocurre al cierre de la investigación. C) y D) No corresponden a habilidades del proceso indagatorio.'
+      },
+      {
+        id: 'ecep-d4-04',
+        ciclo: 'primer_ciclo',
+        dominio: 'D4',
+        dominioNombre: 'Dominio 4: Ciencias Naturales',
+        subdominio: '4.2 Enseñanza-Aprendizaje (Superación de Dificultades / Ideas Previas)',
+        dimension: 'didactico',
+        enunciado: 'Al estudiar el ciclo día-noche en 3° básico, varios estudiantes afirman que "de noche el Sol se apaga o se esconde detrás de las montañas". ¿Qué estrategia didáctica con uso de modelos es más efectiva para superar esta concepción alternativa?',
+        opciones: [
+          'A) Pedirles que memoricen la definición de movimiento de rotación terrestre en horas y minutos.',
+          'B) Realizar una actividad demostrativa en sala oscurecida usando una linterna fija (Sol) y un globo terráqueo con una figura pegada en Chile, haciéndolo girar sobre su eje para que observen cuándo queda iluminado y cuándo en sombra.',
+          'C) Entregar una guía para colorear el Sol amarillo y la Luna plateada.',
+          'D) Explicar verbalmente que la Tierra gira a más de 1.600 km/h en el ecuador.'
+        ],
+        correcta: 1,
+        explicacion: 'El modelamiento concreto (linterna + globo terráqueo) permite visualizar espacialmente que la fuente luminosa permanece encendida y que la alternancia día-noche se debe a la rotación de la Tierra sobre su propio eje.',
+        distractores: 'A) y D) Apelan a memorización o datos abstractos sin visualización espacial. C) No aborda el mecanismo causal del fenómeno.'
+      },
+
+      // --- REACTIVOS DE SEGUNDO CICLO (5° A 8° BÁSICO) ---
+      {
+        id: 'ecep-sc-mat-01',
+        ciclo: 'segundo_matematica',
+        dominio: 'D2',
+        dominioNombre: 'Dominio 2: Matemática',
+        subdominio: '2.1 Conocimientos relevantes (Álgebra y Funciones)',
+        dimension: 'disciplinario',
+        enunciado: 'Una empresa de agua potable cobra un cargo fijo mensual de $4.200 más $650 por cada metro cúbico (x) consumido. Si una familia pagó $17.200 en un mes, ¿cuántos metros cúbicos consumió y qué modelo funcional representa el cobro?',
+        opciones: [
+          'A) 20 m³; función afín C(x) = 650x + 4.200.',
+          'B) 26 m³; función lineal C(x) = 650x.',
+          'C) 15 m³; función afín C(x) = 4.200x + 650.',
+          'D) 20 m³; función cuadrática C(x) = 650x² + 4.200.'
+        ],
+        correcta: 0,
+        explicacion: 'El modelo corresponde a una función afín f(x) = mx + n con pendiente m = 650 y coeficiente de posición n = 4.200. Resolviendo 650x + 4.200 = 17.200 → 650x = 13.000 → x = 20 m³.',
+        distractores: 'B) Olvida restar el cargo fijo antes de dividir. C) Invierte pendiente y coeficiente de posición. D) No es una relación cuadrática.'
+      },
+      {
+        id: 'ecep-sc-len-01',
+        ciclo: 'segundo_lenguaje',
+        dominio: 'D1',
+        dominioNombre: 'Dominio 1: Lenguaje y Comunicación',
+        subdominio: '1.2 Enseñanza-Aprendizaje (Lectura Crítica y Argumentación)',
+        dimension: 'didactico',
+        enunciado: 'En 7° básico, los estudiantes leen dos columnas de opinión con posturas opuestas sobre el uso de teléfonos celulares en el aula. ¿Qué tarea evaluativa permite evidenciar de mejor modo la comprensión crítica e intertextual?',
+        opciones: [
+          'A) Subrayar todos los adjetivos calificativos presentes en el primer párrafo de cada columna.',
+          'B) Identificar la tesis de cada autor, comparar la solidez de los argumentos empleados y redactar una postura propia fundamentada.',
+          'C) Copiar literalmente las definiciones de diccionario de cinco palabras técnicas.',
+          'D) Contar cuántas líneas tiene cada columna y determinar cuál es más extensa.'
+        ],
+        correcta: 1,
+        explicacion: 'La lectura crítica intertextual en Segundo Ciclo exige contrastar perspectivas, evaluar la calidad de las evidencias argumentativas y construir un juicio fundamentado.',
+        distractores: 'A), C) y D) Evalúan aspectos formales superficiales o localización literal sin análisis crítico.'
+      },
+      {
+        id: 'ecep-sc-cie-01',
+        ciclo: 'segundo_ciencias',
+        dominio: 'D4',
+        dominioNombre: 'Dominio 4: Ciencias Naturales',
+        subdominio: '4.2 Enseñanza-Aprendizaje (Control de Variables)',
+        dimension: 'didactico',
+        enunciado: 'Un grupo de estudiantes de 6° básico investiga cómo influye la temperatura del agua en la rapidez con que se disuelve una pastilla efervescente. Para ello colocan una pastilla entera en 200 mL de agua caliente (60 °C) y media pastilla molida en 100 mL de agua fría (10 °C). ¿Qué retroalimentación formativa debe entregar el docente?',
+        opciones: [
+          'A) Felicitarlos porque modificaron tres variables a la vez, acelerando los resultados.',
+          'B) Orientarlos a identificar que deben mantener constantes el volumen de agua y el estado/masa de la pastilla (variables controladas) para aislar el efecto de la temperatura (variable independiente).',
+          'C) Indicarles que la variable dependiente es la temperatura del agua.',
+          'D) Sugerirles que no midan el tiempo con cronómetro para evitar errores.'
+        ],
+        correcta: 1,
+        explicacion: 'En el diseño experimental escolar, el control de variables es indispensable para establecer relaciones causales válidas entre la variable independiente (temperatura) y la dependiente (tiempo de disolución).',
+        distractores: 'A) Modificar múltiples factores invalida la conclusión experimental. C) Confunde variable independiente con dependiente. D) Elimina la medición cuantitativa.'
+      },
+      {
+        id: 'ecep-sc-his-01',
+        ciclo: 'segundo_historia',
+        dominio: 'D3',
+        dominioNombre: 'Dominio 3: Historia, Geografía y Cs. Sociales',
+        subdominio: '3.2 Enseñanza-Aprendizaje (Pensamiento Crítico y Fuentes)',
+        dimension: 'didactico',
+        enunciado: 'Al abordar el proceso de industrialización y la "Cuestión Social" en Chile a fines del siglo XIX e inicios del XX en 6° básico, ¿qué secuencia didáctica favorece el pensamiento histórico multicausal?',
+        opciones: [
+          'A) Memorizar únicamente el año de promulgación de la Ley de la Silla.',
+          'B) Analizar fuentes primarias (fotografías de conventillos, prensa obrera e informes parlamentarios) para relacionar el auge salitrero, la migración campo-ciudad y las demandas laborales.',
+          'C) Realizar un dictado extenso sobre los presidentes del período parlamentario.',
+          'D) Dibujar el mapa político actual de Chile sin referencia histórica.'
+        ],
+        correcta: 1,
+        explicacion: 'Articular fuentes diversas permite comprender la Cuestión Social como un fenómeno multidimensional (económico, demográfico, urbano y político).',
+        distractores: 'A) y C) Reducen la historia a datos aislados. D) Carece de contextualización temporal.'
+      }
+    ];
+
+    // =========================================================================
+    // 3. ESTADO GLOBAL Y PERSISTENCIA EN LOCALSTORAGE
+    // =========================================================================
+    const STORAGE_KEYS = {
+      PREGUNTAS_CUSTOM: 'ecep_california_preguntas_custom_v1',
+      TEMARIO_CHECKLIST: 'ecep_california_temario_check_v1',
+      HISTORIAL: 'ecep_california_historial_v1'
+    };
+
+    let state = {
+      vistaActual: 'config',
+      filtros: {
+        ciclo: 'primer_ciclo',
+        dominio: 'todos',
+        dimension: 'todas',
+        cantidad: 10,
+        modo: 'guiada',
+        tiempoMin: 30
+      },
+      preguntasCustom: [],
+      temarioChecked: {},
+      historial: [],
+      sesion: null,
+      ultimoResultado: null,
+      filtroRevisionActual: 'todas'
+    };
+
+    function cargarEstadoLocal() {
+      try {
+        const custom = localStorage.getItem(STORAGE_KEYS.PREGUNTAS_CUSTOM);
+        if (custom) state.preguntasCustom = JSON.parse(custom);
+
+        const check = localStorage.getItem(STORAGE_KEYS.TEMARIO_CHECKLIST);
+        if (check) state.temarioChecked = JSON.parse(check);
+
+        const hist = localStorage.getItem(STORAGE_KEYS.HISTORIAL);
+        if (hist) state.historial = JSON.parse(hist);
+      } catch (e) {
+        console.error('Error leyendo localStorage:', e);
+      }
+    }
+
+    function guardarEstadoLocal() {
+      try {
+        localStorage.setItem(STORAGE_KEYS.PREGUNTAS_CUSTOM, JSON.stringify(state.preguntasCustom));
+        localStorage.setItem(STORAGE_KEYS.TEMARIO_CHECKLIST, JSON.stringify(state.temarioChecked));
+        localStorage.setItem(STORAGE_KEYS.HISTORIAL, JSON.stringify(state.historial));
+      } catch (e) {
+        console.error('Error guardando localStorage:', e);
+      }
+    }
+
+    function obtenerBancoCompleto() {
+      return [...BANCO_PREGUNTAS_BASE, ...state.preguntasCustom];
+    }
+
+    // =========================================================================
+    // 4. UTILIDADES DE INTERFAZ (TOASTS, MODALES, NAVEGACIÓN)
+    // =========================================================================
+    function showToast(mensaje, tipo = 'info') {
+      const container = document.getElementById('toast-container');
+      const colores = {
+        success: 'bg-emerald-900 text-white border-emerald-700',
+        error: 'bg-rose-900 text-white border-rose-700',
+        warning: 'bg-amber-900 text-white border-amber-700',
+        info: 'bg-slate-900 text-white border-slate-700'
+      };
+      const div = document.createElement('div');
+      div.className = `pointer-events-auto rounded-xl px-4 py-3 text-xs sm:text-sm font-semibold shadow-xl border ${colores[tipo] || colores.info} fade-in flex items-center justify-between gap-3`;
+      div.innerHTML = `<span>${mensaje}</span><button onclick="this.parentElement.remove()" class="opacity-70 hover:opacity-100">✕</button>`;
+      container.appendChild(div);
+      setTimeout(() => { if (div.parentElement) div.remove(); }, 4200);
+    }
+
+    function openConfirmModal(titulo, mensaje, onConfirm) {
+      const modal = document.getElementById('confirm-modal');
+      document.getElementById('modal-title').textContent = titulo;
+      document.getElementById('modal-message').textContent = mensaje;
+      modal.classList.remove('hidden');
+
+      const btnOk = document.getElementById('modal-confirm');
+      const btnCancel = document.getElementById('modal-cancel');
+
+      const cleanup = () => {
+        modal.classList.add('hidden');
+        btnOk.onclick = null;
+        btnCancel.onclick = null;
+      };
+
+      btnCancel.onclick = cleanup;
+      btnOk.onclick = () => {
+        cleanup();
+        onConfirm();
+      };
+    }
+
+    function toggleGuiaDocente() {
+      document.getElementById('guia-docente-panel').classList.toggle('hidden');
+    }
+
+    function cambiarVista(vista) {
+      state.vistaActual = vista;
+      const vistas = ['config', 'oficiales', 'rendir', 'temario', 'importar', 'historial', 'sala', 'revision'];
+      if (vista !== 'rendir' && OF.actual && OF.actual.modo === 'rendir') guardarProgresoOficial();
+      vistas.forEach(v => {
+        const el = document.getElementById(`view-${v}`);
+        if (el) el.classList.toggle('hidden', v !== vista);
+      });
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white', 'shadow-sm', 'font-bold');
+        btn.classList.add('text-slate-300', 'font-semibold');
+      });
+      const activeBtn = document.getElementById(`tab-btn-${vista}`);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow-sm', 'font-bold');
+        activeBtn.classList.remove('text-slate-300', 'font-semibold');
+      }
+
+      if (vista === 'config') actualizarDisponibles();
+      if (vista === 'temario') renderTemario();
+      if (vista === 'historial') renderHistorial();
+      if (vista === 'oficiales') renderOficiales();
+      if (vista === 'rendir') {
+        const tabOf = document.getElementById('tab-btn-oficiales');
+        tabOf.classList.add('bg-blue-600', 'text-white', 'shadow-sm', 'font-bold');
+        tabOf.classList.remove('text-slate-300', 'font-semibold');
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // =========================================================================
+    // 5. FILTROS Y CONFIGURACIÓN DE SESIÓN
+    // =========================================================================
+    function seleccionarFiltro(tipo, valor) {
+      if (tipo === 'ciclo') {
+        state.filtros.ciclo = valor;
+        document.querySelectorAll('.filter-ciclo').forEach(btn => {
+          const activo = btn.dataset.ciclo === valor;
+          btn.classList.toggle('border-blue-600', activo);
+          btn.classList.toggle('bg-blue-50/70', activo);
+          btn.classList.toggle('border-slate-200', !activo);
+          btn.classList.toggle('bg-white', !activo);
+        });
+      } else if (tipo === 'cantidad') {
+        state.filtros.cantidad = Number(valor);
+        document.querySelectorAll('.filter-cant').forEach(btn => {
+          const activo = Number(btn.dataset.cant) === Number(valor);
+          btn.classList.toggle('border-blue-600', activo);
+          btn.classList.toggle('bg-blue-50', activo);
+          btn.classList.toggle('text-blue-900', activo);
+          btn.classList.toggle('border-slate-200', !activo);
+          btn.classList.toggle('text-slate-700', !activo);
+        });
+      } else if (tipo === 'modo') {
+        state.filtros.modo = valor;
+        document.querySelectorAll('.filter-modo').forEach(btn => {
+          const activo = btn.dataset.modo === valor;
+          btn.classList.toggle('border-blue-600', activo);
+          btn.classList.toggle('bg-blue-50/70', activo);
+          btn.classList.toggle('border-slate-200', !activo);
+          btn.classList.toggle('bg-white', !activo);
+        });
+        document.getElementById('tiempo-config-box').classList.toggle('hidden', valor !== 'ensayo');
+      }
+      actualizarDisponibles();
+    }
+
+    function obtenerPreguntasFiltradas() {
+      const dom = document.getElementById('select-dominio').value;
+      const dim = document.getElementById('select-dimension').value;
+      state.filtros.dominio = dom;
+      state.filtros.dimension = dim;
+
+      return obtenerBancoCompleto().filter(p => {
+        const matchCiclo = p.ciclo === state.filtros.ciclo;
+        const matchDom = dom === 'todos' || p.dominio === dom;
+        const matchDim = dim === 'todas' || p.dimension === dim;
+        return matchCiclo && matchDom && matchDim;
+      });
+    }
+
+    function actualizarDisponibles() {
+      const filtradas = obtenerPreguntasFiltradas();
+      document.getElementById('count-disponibles').textContent = filtradas.length;
+      document.getElementById('total-banco-info').textContent = obtenerBancoCompleto().length;
+    }
+
+    function practicarDesdeDominio(dominioCodigo) {
+      state.filtros.ciclo = 'primer_ciclo';
+      seleccionarFiltro('ciclo', 'primer_ciclo');
+      document.getElementById('select-dominio').value = dominioCodigo;
+      document.getElementById('select-dimension').value = 'todas';
+      actualizarDisponibles();
+      iniciarSesion();
+    }
+
+    // =========================================================================
+    // 6. TEMARIO OFICIAL 2026 (RENDER + CHECKLIST + BUSCADOR)
+    // =========================================================================
+    function actualizarIndicadorProgresoTemario() {
+      let total = 0;
+      let marcados = 0;
+      TEMARIO_OFICIAL_2026.forEach(dom => {
+        dom.subdominios.forEach(sub => {
+          sub.indicadores.forEach(ind => {
+            total++;
+            if (state.temarioChecked[ind.id]) marcados++;
+          });
+        });
+      });
+      const pct = total > 0 ? Math.round((marcados / total) * 100) : 0;
+      document.getElementById('temario-progreso-texto').textContent = `${marcados} / ${total} (${pct}%)`;
+      document.getElementById('temario-progreso-barra').style.width = `${pct}%`;
+      document.getElementById('nav-temario-pct').textContent = `${pct}%`;
+    }
+
+    function toggleIndicadorTemario(id) {
+      state.temarioChecked[id] = !state.temarioChecked[id];
+      guardarEstadoLocal();
+      actualizarIndicadorProgresoTemario();
+      renderTemario();
+    }
+
+    function renderTemario() {
+      const query = (document.getElementById('buscador-temario').value || '').toLowerCase().trim();
+      const domFiltro = document.getElementById('filtro-dominio-temario').value;
+      const container = document.getElementById('temario-dominios-container');
+
+      const colorMap = {
+        blue: { header: 'bg-blue-900 text-white', badge: 'bg-blue-100 text-blue-800 border-blue-200', btn: 'bg-blue-700 hover:bg-blue-800 text-white' },
+        emerald: { header: 'bg-emerald-900 text-white', badge: 'bg-emerald-100 text-emerald-800 border-emerald-200', btn: 'bg-emerald-700 hover:bg-emerald-800 text-white' },
+        amber: { header: 'bg-amber-900 text-white', badge: 'bg-amber-100 text-amber-800 border-amber-200', btn: 'bg-amber-700 hover:bg-amber-800 text-white' },
+        purple: { header: 'bg-purple-900 text-white', badge: 'bg-purple-100 text-purple-800 border-purple-200', btn: 'bg-purple-700 hover:bg-purple-800 text-white' }
+      };
+
+      let html = '';
+      TEMARIO_OFICIAL_2026.forEach(dom => {
+        if (domFiltro !== 'todos' && dom.codigo !== domFiltro) return;
+
+        let domTotal = 0;
+        let domChecked = 0;
+        let subHtml = '';
+
+        dom.subdominios.forEach(sub => {
+          const indsFiltrados = sub.indicadores.filter(ind => {
+            domTotal++;
+            if (state.temarioChecked[ind.id]) domChecked++;
+            if (!query) return true;
+            return ind.texto.toLowerCase().includes(query) || sub.nombre.toLowerCase().includes(query);
+          });
+
+          if (indsFiltrados.length > 0) {
+            subHtml += `
+              <div class="space-y-2.5">
+                <h4 class="text-sm font-extrabold text-slate-800 bg-slate-100 px-3.5 py-2 rounded-xl border border-slate-200">
+                  ${sub.nombre}
+                </h4>
+                <div class="divide-y divide-slate-100">
+                  ${indsFiltrados.map(ind => {
+                    const checked = Boolean(state.temarioChecked[ind.id]);
+                    return `
+                      <label class="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50 cursor-pointer transition">
+                        <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleIndicadorTemario('${ind.id}')" class="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 shrink-0" />
+                        <span class="text-xs sm:text-sm leading-relaxed ${checked ? 'line-through text-slate-400' : 'text-slate-700'}">
+                          ${ind.texto}
+                        </span>
+                      </label>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            `;
+          }
+        });
+
+        if (subHtml) {
+          const c = colorMap[dom.color] || colorMap.blue;
+          const pctDom = domTotal > 0 ? Math.round((domChecked / domTotal) * 100) : 0;
+          html += `
+            <article class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              <div class="${c.header} px-5 py-4 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 class="text-base sm:text-lg font-extrabold">${dom.titulo}</h3>
+                  <p class="text-xs opacity-85 mt-0.5">Avance del dominio: ${domChecked} de ${domTotal} indicadores (${pctDom}%)</p>
+                </div>
+                <button type="button" onclick="practicarDesdeDominio('${dom.codigo}')" class="px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold border border-white/25 transition">
+                  ▶ Practicar este Dominio
+                </button>
+              </div>
+              <div class="p-5 sm:p-6 space-y-6">
+                ${subHtml}
+              </div>
+            </article>
+          `;
+        }
+      });
+
+      container.innerHTML = html || `<div class="bg-white rounded-2xl p-8 text-center text-slate-500 border border-slate-200">No se encontraron indicadores que coincidan con "${query}".</div>`;
+    }
+
+    // =========================================================================
+    // 7. SALA DE EVALUACIÓN (PRÁCTICA GUIADA Y ENSAYO SIMULADO)
+    // =========================================================================
+    function iniciarSesion(preguntasPersonalizadas = null) {
+      let pool = preguntasPersonalizadas || obtenerPreguntasFiltradas();
+      if (pool.length === 0) {
+        showToast('No hay preguntas disponibles para esa combinación de filtros. Amplía el dominio o dimensión.', 'warning');
+        return;
+      }
+
+      // Mezclar aleatoriamente
+      const mezcladas = [...pool].sort(() => Math.random() - 0.5);
+      const seleccionadas = preguntasPersonalizadas
+        ? mezcladas
+        : mezcladas.slice(0, Math.min(state.filtros.cantidad, mezcladas.length));
+
+      const tiempoMin = Number(document.getElementById('select-tiempo').value || 30);
+
+      state.sesion = {
+        modo: preguntasPersonalizadas ? 'guiada' : state.filtros.modo,
+        ciclo: state.filtros.ciclo,
+        preguntas: seleccionadas,
+        indice: 0,
+        respuestas: new Array(seleccionadas.length).fill(null),
+        dudas: new Array(seleccionadas.length).fill(false),
+        segundosRestantes: tiempoMin * 60,
+        timerId: null
+      };
+
+      document.getElementById('sala-badge-modo').textContent =
+        state.sesion.modo === 'guiada' ? 'Práctica Guiada (Corrección Inmediata)' : 'Ensayo Simulado CPEIP';
+      document.getElementById('sala-num-total').textContent = seleccionadas.length;
+
+      const timerBox = document.getElementById('sala-timer-box');
+      if (state.sesion.modo === 'ensayo') {
+        timerBox.classList.remove('hidden');
+        timerBox.classList.add('flex');
+        iniciarCronometro();
+      } else {
+        timerBox.classList.add('hidden');
+        timerBox.classList.remove('flex');
+      }
+
+      cambiarVista('sala');
+      renderPreguntaActual();
+    }
+
+    function iniciarCronometro() {
+      if (state.sesion.timerId) clearInterval(state.sesion.timerId);
+      actualizarDisplayTimer();
+      state.sesion.timerId = setInterval(() => {
+        if (!state.sesion) return;
+        state.sesion.segundosRestantes--;
+        actualizarDisplayTimer();
+        if (state.sesion.segundosRestantes <= 0) {
+          clearInterval(state.sesion.timerId);
+          showToast('¡Tiempo cumplido! Se ha finalizado el ensayo automáticamente.', 'warning');
+          finalizarSesion();
+        }
+      }, 1000);
+    }
+
+    function actualizarDisplayTimer() {
+      const s = Math.max(0, state.sesion.segundosRestantes);
+      const min = String(Math.floor(s / 60)).padStart(2, '0');
+      const seg = String(s % 60).padStart(2, '0');
+      document.getElementById('sala-timer-text').textContent = `${min}:${seg}`;
+    }
+
+    function renderPreguntaActual() {
+      const ses = state.sesion;
+      const idx = ses.indice;
+      const q = ses.preguntas[idx];
+      const respUser = ses.respuestas[idx];
+
+      document.getElementById('sala-num-actual').textContent = idx + 1;
+      document.getElementById('q-etiqueta-dominio').textContent = q.dominioNombre || q.dominio;
+      document.getElementById('q-etiqueta-subdominio').textContent = q.subdominio || 'Evaluación CPEIP 2026';
+      document.getElementById('q-enunciado').textContent = q.enunciado;
+
+      // Estado botón duda
+      const btnDuda = document.getElementById('btn-marcar-duda');
+      const txtDuda = document.getElementById('txt-marcar-duda');
+      if (ses.dudas[idx]) {
+        btnDuda.classList.add('bg-amber-100', 'border-amber-400', 'text-amber-900');
+        txtDuda.textContent = 'Marcada con duda';
+      } else {
+        btnDuda.classList.remove('bg-amber-100', 'border-amber-400', 'text-amber-900');
+        txtDuda.textContent = 'Marcar con duda';
+      }
+
+      // Render opciones
+      const opcionesCont = document.getElementById('q-opciones');
+      opcionesCont.innerHTML = q.opciones.map((textoOp, opIdx) => {
+        let clases = 'border-slate-200 bg-white hover:border-blue-400 hover:bg-blue-50/30 text-slate-800';
+        let badge = '';
+
+        if (ses.modo === 'guiada' && respUser !== null) {
+          if (opIdx === q.correcta) {
+            clases = 'border-emerald-600 bg-emerald-50 text-emerald-950 font-semibold';
+            badge = '<span class="px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-emerald-600 text-white shrink-0">Correcta</span>';
+          } else if (opIdx === respUser) {
+            clases = 'border-rose-500 bg-rose-50 text-rose-950';
+            badge = '<span class="px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-rose-600 text-white shrink-0">Tu elección</span>';
+          } else {
+            clases = 'border-slate-200 bg-slate-50/60 text-slate-500';
+          }
+        } else if (respUser === opIdx) {
+          clases = 'border-blue-600 bg-blue-50 text-blue-950 font-semibold shadow-2xs';
+          badge = '<span class="px-2 py-0.5 text-[11px] font-bold rounded-full bg-blue-600 text-white shrink-0">Seleccionada</span>';
+        }
+
+        return `
+          <button type="button" onclick="seleccionarRespuesta(${opIdx})" class="w-full text-left p-4 rounded-xl border-2 transition flex items-start justify-between gap-3 ${clases}">
+            <span class="text-xs sm:text-sm leading-relaxed">${textoOp}</span>
+            ${badge}
+          </button>
+        `;
+      }).join('');
+
+      // Retroalimentación inmediata en Modo Práctica Guiada
+      const fbBox = document.getElementById('q-feedback-box');
+      if (ses.modo === 'guiada' && respUser !== null) {
+        const esCorrecta = respUser === q.correcta;
+        fbBox.classList.remove('hidden', 'bg-emerald-50/80', 'border-emerald-200', 'bg-rose-50/80', 'border-rose-200');
+        fbBox.classList.add(esCorrecta ? 'bg-emerald-50/80' : 'bg-rose-50/80', esCorrecta ? 'border-emerald-200' : 'border-rose-200');
+
+        const fbBadge = document.getElementById('q-feedback-badge');
+        fbBadge.textContent = esCorrecta ? '✓ ¡Respuesta Correcta!' : '✕ Respuesta Incorrecta';
+        fbBadge.className = `px-2.5 py-0.5 rounded-full text-xs font-extrabold ${esCorrecta ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'}`;
+
+        document.getElementById('q-feedback-titulo').textContent = `Subdominio: ${q.subdominio}`;
+        document.getElementById('q-feedback-explicacion').innerHTML = `<strong>Fundamento Curricular y Pedagógico:</strong> ${q.explicacion}`;
+
+        const distEl = document.getElementById('q-feedback-distractores');
+        if (q.distractores) {
+          distEl.classList.remove('hidden');
+          distEl.innerHTML = `<strong>Análisis de distractores:</strong> ${q.distractores}`;
+        } else {
+          distEl.classList.add('hidden');
+        }
+      } else {
+        fbBox.classList.add('hidden');
+      }
+
+      // Botones Anterior / Siguiente
+      document.getElementById('btn-prev').disabled = idx === 0;
+      const btnNext = document.getElementById('btn-next');
+      if (idx === ses.preguntas.length - 1) {
+        btnNext.textContent = 'Finalizar y Revisar ✓';
+        btnNext.classList.remove('bg-blue-700', 'hover:bg-blue-800');
+        btnNext.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+      } else {
+        btnNext.textContent = 'Siguiente →';
+        btnNext.classList.add('bg-blue-700', 'hover:bg-blue-800');
+        btnNext.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+      }
+
+      renderMapaPreguntas();
+    }
+
+    function seleccionarRespuesta(opIdx) {
+      const ses = state.sesion;
+      // En modo guiada, una vez respondida se bloquea el cambio para mantener rigor formativo
+      if (ses.modo === 'guiada' && ses.respuestas[ses.indice] !== null) return;
+      ses.respuestas[ses.indice] = opIdx;
+      renderPreguntaActual();
+    }
+
+    function toggleDudaActual() {
+      const ses = state.sesion;
+      ses.dudas[ses.indice] = !ses.dudas[ses.indice];
+      renderPreguntaActual();
+    }
+
+    function navegarPregunta(delta) {
+      const ses = state.sesion;
+      const nuevo = ses.indice + delta;
+      if (nuevo < 0) return;
+      if (nuevo >= ses.preguntas.length) {
+        confirmarTerminarSesion();
+        return;
+      }
+      ses.indice = nuevo;
+      renderPreguntaActual();
+    }
+
+    function irAPregunta(idx) {
+      state.sesion.indice = idx;
+      renderPreguntaActual();
+    }
+
+    function renderMapaPreguntas() {
+      const ses = state.sesion;
+      const mapa = document.getElementById('sala-mapa-preguntas');
+      mapa.innerHTML = ses.preguntas.map((_, i) => {
+        let style = 'bg-white border-slate-300 text-slate-700';
+        if (ses.dudas[i]) {
+          style = 'bg-amber-400 border-amber-500 text-slate-900 font-extrabold';
+        } else if (ses.respuestas[i] !== null) {
+          if (ses.modo === 'guiada') {
+            style = ses.respuestas[i] === ses.preguntas[i].correcta
+              ? 'bg-emerald-600 border-emerald-700 text-white font-bold'
+              : 'bg-rose-600 border-rose-700 text-white font-bold';
+          } else {
+            style = 'bg-blue-600 border-blue-700 text-white font-bold';
+          }
+        }
+        const ring = i === ses.indice ? 'ring-2 ring-offset-1 ring-slate-900' : '';
+        return `<button type="button" onclick="irAPregunta(${i})" class="h-9 rounded-lg border text-xs transition ${style} ${ring}">${i + 1}</button>`;
+      }).join('');
+    }
+
+    function confirmarTerminarSesion() {
+      const sinResp = state.sesion.respuestas.filter(r => r === null).length;
+      const msg = sinResp > 0
+        ? `Tienes ${sinResp} pregunta(s) sin responder. ¿Deseas finalizar y revisar tus resultados ahora?`
+        : '¿Deseas entregar tu evaluación y ver el diagnóstico detallado?';
+      openConfirmModal('Finalizar sesión de estudio', msg, finalizarSesion);
+    }
+
+    function confirmarAbandonarSesion() {
+      openConfirmModal('Salir de la sesión', 'Si sales ahora se perderá el progreso de este intento.', () => {
+        if (state.sesion && state.sesion.timerId) clearInterval(state.sesion.timerId);
+        state.sesion = null;
+        cambiarVista('config');
+      });
+    }
+
+    // =========================================================================
+    // 8. REVISIÓN FINAL Y DIAGNÓSTICO POR TRAMO CPEIP
+    // =========================================================================
+    function finalizarSesion() {
+      const ses = state.sesion;
+      if (!ses) return;
+      if (ses.timerId) clearInterval(ses.timerId);
+
+      let correctas = 0;
+      const porDominio = {};
+
+      const detalles = ses.preguntas.map((q, idx) => {
+        const respUser = ses.respuestas[idx];
+        const esOk = respUser === q.correcta;
+        if (esOk) correctas++;
+
+        if (!porDominio[q.dominio]) {
+          porDominio[q.dominio] = { nombre: q.dominioNombre || q.dominio, total: 0, ok: 0 };
+        }
+        porDominio[q.dominio].total++;
+        if (esOk) porDominio[q.dominio].ok++;
+
+        return {
+          pregunta: q,
+          respuestaUsuario: respUser,
+          esCorrecta: esOk,
+          conDuda: ses.dudas[idx]
+        };
+      });
+
+      const total = ses.preguntas.length;
+      const porcentaje = Math.round((correctas / total) * 100);
+      const tramoInfo = calcularTramoCPEIP(porcentaje);
+
+      const resultado = {
+        id: 'res-' + Date.now(),
+        fecha: new Date().toLocaleString('es-CL', { dateStyle: 'medium', timeStyle: 'short' }),
+        modo: ses.modo === 'guiada' ? 'Práctica Guiada' : 'Ensayo Simulado',
+        ciclo: ses.ciclo,
+        correctas,
+        total,
+        porcentaje,
+        tramo: tramoInfo.nombre,
+        tramoClase: tramoInfo.clase,
+        porDominio,
+        detalles
+      };
+
+      state.ultimoResultado = resultado;
+      state.historial.unshift(resultado);
+      guardarEstadoLocal();
+      actualizarBadgeHistorial();
+
+      mostrarPantallaRevision(resultado);
+    }
+
+    function calcularTramoCPEIP(pct) {
+      if (pct >= 85) return { nombre: 'Destacado', clase: 'bg-emerald-50 border-emerald-300 text-emerald-900' };
+      if (pct >= 70) return { nombre: 'Competente', clase: 'bg-blue-50 border-blue-300 text-blue-900' };
+      if (pct >= 50) return { nombre: 'Básico', clase: 'bg-amber-50 border-amber-300 text-amber-900' };
+      return { nombre: 'Insatisfactorio', clase: 'bg-rose-50 border-rose-300 text-rose-900' };
+    }
+
+    function mostrarPantallaRevision(res) {
+      document.getElementById('rev-subtitulo').textContent = `${res.modo} · Completado el ${res.fecha}`;
+      document.getElementById('rev-puntaje').textContent = `${res.correctas} / ${res.total}`;
+      document.getElementById('rev-porcentaje').textContent = `${res.porcentaje}%`;
+
+      const tramoCard = document.getElementById('rev-tramo-card');
+      tramoCard.className = `rounded-2xl px-5 py-3 text-center border ${res.tramoClase}`;
+      document.getElementById('rev-tramo').textContent = res.tramo;
+
+      // Desglose por dominio
+      const desgloseCont = document.getElementById('rev-desglose-dominios');
+      desgloseCont.innerHTML = Object.values(res.porDominio).map(d => {
+        const pct = Math.round((d.ok / d.total) * 100);
+        return `
+          <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-200">
+            <div class="text-xs font-bold text-slate-700 truncate">${d.nombre}</div>
+            <div class="flex items-end justify-between mt-1.5">
+              <span class="text-lg font-extrabold text-slate-900">${d.ok}/${d.total}</span>
+              <span class="text-xs font-bold ${pct >= 70 ? 'text-emerald-700' : 'text-amber-700'}">${pct}%</span>
+            </div>
+            <div class="w-full h-1.5 bg-slate-200 rounded-full mt-2 overflow-hidden">
+              <div class="h-full ${pct >= 70 ? 'bg-emerald-500' : 'bg-amber-500'}" style="width: ${pct}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const incCount = res.detalles.filter(d => !d.esCorrecta).length;
+      const dudaCount = res.detalles.filter(d => d.conDuda).length;
+      document.getElementById('rev-cnt-inc').textContent = incCount;
+      document.getElementById('rev-cnt-duda').textContent = dudaCount;
+
+      const btnReintentar = document.getElementById('btn-reintentar-falladas');
+      btnReintentar.classList.toggle('hidden', incCount === 0);
+
+      cambiarVista('revision');
+      filtrarRevision('todas');
+    }
+
+    function filtrarRevision(filtro) {
+      state.filtroRevisionActual = filtro;
+      document.querySelectorAll('.rev-filter-btn').forEach(btn => {
+        const active = btn.dataset.revfilter === filtro;
+        btn.classList.toggle('bg-slate-900', active);
+        btn.classList.toggle('text-white', active);
+        btn.classList.toggle('bg-slate-100', !active);
+        btn.classList.toggle('text-slate-700', !active);
+      });
+
+      const res = state.ultimoResultado;
+      const filtrados = res.detalles.filter(d => {
+        if (filtro === 'incorrectas') return !d.esCorrecta;
+        if (filtro === 'dudas') return d.conDuda;
+        return true;
+      });
+
+      const lista = document.getElementById('rev-detalle-lista');
+      if (filtrados.length === 0) {
+        lista.innerHTML = `<div class="bg-white rounded-2xl p-8 text-center text-slate-500 border border-slate-200">No hay preguntas en esta categoría.</div>`;
+        return;
+      }
+
+      lista.innerHTML = filtrados.map((item, i) => {
+        const q = item.pregunta;
+        const bordeEstado = item.esCorrecta ? 'border-l-4 border-l-emerald-500' : 'border-l-4 border-l-rose-500';
+        return `
+          <article class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6 space-y-4 ${bordeEstado}">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-extrabold ${item.esCorrecta ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
+                  ${item.esCorrecta ? '✓ Correcta' : '✕ Incorrecta'}
+                </span>
+                ${item.conDuda ? '<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">⚑ Marcada con duda</span>' : ''}
+                <span class="text-xs font-semibold text-slate-500">${q.dominioNombre} · ${q.subdominio}</span>
+              </div>
+            </div>
+
+            <p class="text-sm sm:text-base font-bold text-slate-900 whitespace-pre-line">${q.enunciado}</p>
+
+            <div class="space-y-2">
+              ${q.opciones.map((op, opIdx) => {
+                let st = 'bg-slate-50 border-slate-200 text-slate-600';
+                let tag = '';
+                if (opIdx === q.correcta) {
+                  st = 'bg-emerald-50 border-emerald-400 text-emerald-950 font-semibold';
+                  tag = '<span class="text-xs font-extrabold text-emerald-700">✓ Respuesta correcta</span>';
+                } else if (opIdx === item.respuestaUsuario) {
+                  st = 'bg-rose-50 border-rose-400 text-rose-950 font-semibold';
+                  tag = '<span class="text-xs font-extrabold text-rose-700">✕ Tu respuesta</span>';
+                }
+                return `<div class="p-3 rounded-xl border text-xs sm:text-sm flex items-center justify-between gap-2 ${st}"><span>${op}</span>${tag}</div>`;
+              }).join('')}
+            </div>
+
+            <div class="bg-blue-50/70 rounded-xl p-4 border border-blue-200/80 text-xs sm:text-sm text-slate-700 space-y-1.5">
+              <div><strong class="text-blue-950">Fundamento pedagógico/curricular:</strong> ${q.explicacion}</div>
+              ${q.distractores ? `<div class="text-xs text-slate-600"><strong>Análisis de distractores:</strong> ${q.distractores}</div>` : ''}
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function reintentarIncorrectas() {
+      if (!state.ultimoResultado) return;
+      const falladas = state.ultimoResultado.detalles.filter(d => !d.esCorrecta).map(d => d.pregunta);
+      if (falladas.length > 0) iniciarSesion(falladas);
+    }
+
+    // =========================================================================
+    // 9. IMPORTADOR DE PRUEBAS CPEIP Y EXPORTACIÓN / IMPORTACIÓN JSON
+    // =========================================================================
+    function cargarEjemploImportacion() {
+      document.getElementById('imp-texto').value = `1. Una profesora de 2° básico trabaja el desarrollo de la conciencia fonológica con sus estudiantes. ¿Cuál de las siguientes actividades promueve directamente la síntesis fonémica?
+A) Separar con aplausos las sílabas de la palabra "elefante".
+B) Escuchar los sonidos aislados /m/ - /e/ - /s/ - /a/ pronunciados por la docente y descubrir qué palabra forman al unirlos.
+C) Escribir en el cuaderno cinco palabras que comiencen con la letra M.
+D) Identificar los personajes principales de una fábula leída en clases.
+
+2. En un curso de 4° básico se realiza un experimento aleatorio lanzando un dado común de seis caras numeradas del 1 al 6. ¿Cuál de los siguientes eventos tiene mayor probabilidad de ocurrir?
+A) Obtener un número par.
+B) Obtener un número mayor que 4.
+C) Obtener el número 3.
+D) Obtener un múltiplo de 5.`;
+      document.getElementById('imp-claves').value = '1-B, 2-A';
+      showToast('Ejemplo de prueba cargado. Haz clic en "Incorporar Preguntas al Banco".', 'info');
+    }
+
+    function procesarImportacionTexto() {
+      const rawTexto = document.getElementById('imp-texto').value.trim();
+      const rawClaves = document.getElementById('imp-claves').value.trim().toUpperCase();
+
+      if (!rawTexto || !rawClaves) {
+        showToast('Debes ingresar el texto de las preguntas y la pauta de respuestas.', 'error');
+        return;
+      }
+
+      // Parsear claves ("1-B, 2-A" o "BA")
+      const mapaClaves = {};
+      const letras = ['A', 'B', 'C', 'D'];
+      const pares = rawClaves.match(/(\d+)\s*[-:.)]?\s*([A-D])/g);
+      if (pares && pares.length > 0) {
+        pares.forEach(p => {
+          const m = p.match(/(\d+)\s*[-:.)]?\s*([A-D])/);
+          if (m) mapaClaves[Number(m[1])] = letras.indexOf(m[2]);
+        });
+      } else {
+        const soloLetras = rawClaves.replace(/[^A-D]/g, '').split('');
+        soloLetras.forEach((l, i) => { mapaClaves[i + 1] = letras.indexOf(l); });
+      }
+
+      // Dividir preguntas por encabezado numérico (1. / 1) )
+      const bloques = rawTexto.split(/\n(?=\d+[\.\)]\s)/);
+      const nuevas = [];
+
+      const domCodigo = document.getElementById('imp-dominio').value;
+      const domObj = TEMARIO_OFICIAL_2026.find(d => d.codigo === domCodigo);
+
+      bloques.forEach((bloque, idx) => {
+        const numMatch = bloque.match(/^(\d+)[\.\)]\s*([\s\S]*)/);
+        if (!numMatch) return;
+        const numPreg = Number(numMatch[1]);
+        const cuerpo = numMatch[2];
+
+        const opMatch = cuerpo.match(/([\s\S]*?)\n\s*A[\.\)]\s*([\s\S]*?)\n\s*B[\.\)]\s*([\s\S]*?)\n\s*C[\.\)]\s*([\s\S]*?)\n\s*D[\.\)]\s*([\s\S]*)/i);
+        if (!opMatch) return;
+
+        const correctaIdx = mapaClaves[numPreg] !== undefined ? mapaClaves[numPreg] : (mapaClaves[idx + 1] ?? 0);
+
+        nuevas.push({
+          id: `custom-${Date.now()}-${numPreg}-${Math.random().toString(36).slice(2, 6)}`,
+          ciclo: document.getElementById('imp-ciclo').value,
+          dominio: domCodigo,
+          dominioNombre: domObj ? domObj.titulo : domCodigo,
+          subdominio: 'Ítem Importado de Cuadernillo CPEIP',
+          dimension: document.getElementById('imp-dimension').value,
+          enunciado: opMatch[1].trim(),
+          opciones: [
+            `A) ${opMatch[2].trim()}`,
+            `B) ${opMatch[3].trim()}`,
+            `C) ${opMatch[4].trim()}`,
+            `D) ${opMatch[5].trim()}`
+          ],
+          correcta: correctaIdx >= 0 ? correctaIdx : 0,
+          explicacion: `Respuesta clave oficial registrada: ${letras[correctaIdx >= 0 ? correctaIdx : 0]}. (Ítem importado desde cuadernillo CPEIP).`,
+          distractores: ''
+        });
+      });
+
+      if (nuevas.length === 0) {
+        showToast('No se pudieron detectar preguntas válidas. Verifica que tengan numeración (1.) y alternativas A), B), C), D).', 'error');
+        return;
+      }
+
+      state.preguntasCustom.push(...nuevas);
+      guardarEstadoLocal();
+      actualizarDisponibles();
+      document.getElementById('imp-texto').value = '';
+      document.getElementById('imp-claves').value = '';
+      showToast(`¡Se incorporaron ${nuevas.length} pregunta(s) al banco de estudio!`, 'success');
+      cambiarVista('config');
+    }
+
+    function exportarBancoJSON() {
+      const payload = {
+        origen: 'Escuela Patrimonial California · Tomé',
+        instrumento: 'ECEP 2026 CPEIP',
+        fechaExportacion: new Date().toISOString(),
+        preguntasPersonalizadas: state.preguntasCustom,
+        bancoCompleto: obtenerBancoCompleto()
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Banco_ECEP_Escuela_Patrimonial_California_${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Archivo .json descargado. ¡Compártelo con tus colegas!', 'success');
+    }
+
+    function importarBancoJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+          const lista = Array.isArray(data) ? data : (data.preguntasPersonalizadas || data.bancoCompleto || []);
+          const idsExistentes = new Set(obtenerBancoCompleto().map(p => p.id));
+          let agregadas = 0;
+
+          lista.forEach(item => {
+            if (item && item.enunciado && Array.isArray(item.opciones) && !idsExistentes.has(item.id)) {
+              state.preguntasCustom.push(item);
+              idsExistentes.add(item.id);
+              agregadas++;
+            }
+          });
+
+          guardarEstadoLocal();
+          actualizarDisponibles();
+          showToast(`Importación completada: se añadieron ${agregadas} pregunta(s) nuevas.`, 'success');
+        } catch (err) {
+          showToast('El archivo seleccionado no es un JSON válido.', 'error');
+        }
+        event.target.value = '';
+      };
+      reader.readAsText(file);
+    }
+
+    // =========================================================================
+    // 10. HISTORIAL DE EVALUACIONES
+    // =========================================================================
+    function actualizarBadgeHistorial() {
+      document.getElementById('nav-historial-count').textContent = state.historial.length;
+    }
+
+    function renderHistorial() {
+      const cont = document.getElementById('historial-lista');
+      if (state.historial.length === 0) {
+        cont.innerHTML = `
+          <div class="text-center py-10 text-slate-500 text-sm">
+            Aún no registras sesiones completadas. Inicia una <strong>Práctica Guiada</strong> o un <strong>Ensayo Simulado</strong> para ver tu diagnóstico aquí.
+          </div>
+        `;
+        return;
+      }
+
+      cont.innerHTML = state.historial.map((h, idx) => `
+        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="font-bold text-sm text-slate-900">${h.modo}</span>
+              <span class="text-xs text-slate-500">· ${h.fecha}</span>
+            </div>
+            <div class="text-xs text-slate-600 mt-1">
+              Resultado: <strong>${h.correctas} de ${h.total}</strong> (${h.porcentaje}%) · Tramo: <strong>${h.tramo}</strong>
+            </div>
+          </div>
+          <button type="button" onclick="verDetalleHistorial(${idx})" class="px-3.5 py-2 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-xs font-bold text-slate-700 transition self-start sm:self-auto">
+            Ver revisión
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function verDetalleHistorial(idx) {
+      const item = state.historial[idx];
+      if (!item) return;
+      state.ultimoResultado = item;
+      mostrarPantallaRevision(item);
+    }
+
+    function solicitarLimpiarHistorial() {
+      if (state.historial.length === 0) return;
+      openConfirmModal('Borrar historial', '¿Seguro que deseas eliminar todos los registros de ensayos guardados en este navegador?', () => {
+        state.historial = [];
+        guardarEstadoLocal();
+        actualizarBadgeHistorial();
+        renderHistorial();
+        showToast('Historial borrado.', 'info');
+      });
+    }
+
+    // =========================================================================
+    // 11. INGRESO DE DOCENTES (correo + clave asignada por el administrador)
+    // =========================================================================
+    // Las claves no están en el archivo: datos/usuarios.js guarda solo una huella
+    // SHA-256 (con sal) de cada clave. Misma fórmula que generador_de_claves.html.
+    function sha256(ascii) {
+      function rr(v, a) { return (v >>> a) | (v << (32 - a)); }
+      const maxWord = Math.pow(2, 32);
+      let i, j, result = '';
+      const words = [];
+      const bitLen = ascii.length * 8;
+      let hash = [], k = [];
+      let primeCounter = 0;
+      const isComposite = {};
+      for (let c = 2; primeCounter < 64; c++) {
+        if (!isComposite[c]) {
+          for (i = 0; i < 313; i += c) isComposite[i] = c;
+          hash[primeCounter] = (Math.pow(c, .5) * maxWord) | 0;
+          k[primeCounter++] = (Math.pow(c, 1 / 3) * maxWord) | 0;
+        }
+      }
+      ascii += '\x80';
+      while (ascii.length % 64 - 56) ascii += '\x00';
+      for (i = 0; i < ascii.length; i++) {
+        j = ascii.charCodeAt(i);
+        if (j >> 8) return '';
+        words[i >> 2] |= j << ((3 - i) % 4) * 8;
+      }
+      words[words.length] = ((bitLen / maxWord) | 0);
+      words[words.length] = (bitLen);
+      for (j = 0; j < words.length;) {
+        const w = words.slice(j, j += 16);
+        const oldHash = hash;
+        hash = hash.slice(0, 8);
+        for (i = 0; i < 64; i++) {
+          const w15 = w[i - 15], w2 = w[i - 2];
+          const a = hash[0], e = hash[4];
+          const t1 = hash[7] + (rr(e, 6) ^ rr(e, 11) ^ rr(e, 25)) + ((e & hash[5]) ^ ((~e) & hash[6])) + k[i]
+            + (w[i] = (i < 16) ? w[i] : (w[i - 16] + (rr(w15, 7) ^ rr(w15, 18) ^ (w15 >>> 3)) + w[i - 7] + (rr(w2, 17) ^ rr(w2, 19) ^ (w2 >>> 10))) | 0);
+          const t2 = (rr(a, 2) ^ rr(a, 13) ^ rr(a, 22)) + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
+          hash = [(t1 + t2) | 0].concat(hash);
+          hash[4] = (hash[4] + t1) | 0;
+        }
+        for (i = 0; i < 8; i++) hash[i] = (hash[i] + oldHash[i]) | 0;
+      }
+      for (i = 0; i < 8; i++) for (j = 3; j + 1; j--) { const b = (hash[i] >> (j * 8)) & 255; result += ((b < 16) ? 0 : '') + b.toString(16); }
+      return result;
+    }
+    function utf8(s) { return unescape(encodeURIComponent(s)); }
+    function normalizarCorreo(c) { return String(c || '').trim().toLowerCase(); }
+    function hashClave(correo, clave, sal) {
+      let h = sha256(utf8(`${sal}|${normalizarCorreo(correo)}|${clave}`));
+      for (let i = 0; i < 3000; i++) h = sha256(h + sal);
+      return h;
+    }
+
+    const AUTH_KEY = 'ecep_california_sesion_v1';
+    const STORAGE_BASE = { ...STORAGE_KEYS };
+    let usuarioActual = null;
+    let espacioUsuario = '';
+
+    function storageGet(store, k) { try { return store.getItem(k); } catch (e) { return null; } }
+    function storageSet(store, k, v) { try { store.setItem(k, v); } catch (e) { } }
+    function storageDel(store, k) { try { store.removeItem(k); } catch (e) { } }
+
+    // usuarios.js no guarda los correos legibles: solo id = SHA-256("ecep-id|" + correo).
+    function idCorreo(correo) { return sha256(utf8(`ecep-id|${normalizarCorreo(correo)}`)); }
+    function buscarUsuario(correo) {
+      const id = idCorreo(correo);
+      return (window.USUARIOS_PLATAFORMA || []).find(u => u.id === id) || null;
+    }
+    function buscarUsuarioPorId(id) {
+      return (window.USUARIOS_PLATAFORMA || []).find(u => u.id === id) || null;
+    }
+
+    function alternarVerClave() {
+      const inp = document.getElementById('login-clave');
+      const ver = inp.type === 'password';
+      inp.type = ver ? 'text' : 'password';
+      document.getElementById('btn-ver-clave').textContent = ver ? 'Ocultar' : 'Mostrar';
+    }
+
+    function mostrarErrorLogin(msg) {
+      const el = document.getElementById('login-error');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+    }
+
+    function intentarIngreso(ev) {
+      ev.preventDefault();
+      const correo = document.getElementById('login-correo').value;
+      const clave = document.getElementById('login-clave').value;
+      const recordar = document.getElementById('login-recordar').checked;
+      const btn = document.getElementById('login-btn');
+      btn.disabled = true; btn.textContent = 'Verificando…';
+      setTimeout(() => {
+        const u = buscarUsuario(correo);
+        const ok = u && hashClave(correo, clave, u.sal) === u.hash;
+        btn.disabled = false; btn.textContent = 'Ingresar';
+        if (!ok) {
+          mostrarErrorLogin('El correo o la clave no son correctos. Revisa que estén escritos tal como te los entregaron.');
+          document.getElementById('login-clave').select();
+          return;
+        }
+        const token = JSON.stringify({ i: u.id, h: u.hash });
+        storageSet(sessionStorage, AUTH_KEY, token);
+        if (recordar) storageSet(localStorage, AUTH_KEY, token); else storageDel(localStorage, AUTH_KEY);
+        document.getElementById('login-clave').value = '';
+        entrarComo(u);
+      }, 30);
+    }
+
+    function restaurarSesion() {
+      const raw = storageGet(sessionStorage, AUTH_KEY) || storageGet(localStorage, AUTH_KEY);
+      if (!raw) return false;
+      try {
+        const t = JSON.parse(raw);
+        const u = buscarUsuarioPorId(t.i);
+        // Si el administrador cambió la clave o quitó al docente, la sesión guardada deja de servir.
+        if (u && u.hash === t.h) { storageSet(sessionStorage, AUTH_KEY, raw); entrarComo(u); return true; }
+      } catch (e) { }
+      storageDel(sessionStorage, AUTH_KEY); storageDel(localStorage, AUTH_KEY);
+      return false;
+    }
+
+    function cerrarSesion() {
+      if (OF.actual && OF.actual.modo === 'rendir') guardarProgresoOficial();
+      storageDel(sessionStorage, AUTH_KEY);
+      storageDel(localStorage, AUTH_KEY);
+      window.location.reload();
+    }
+
+    function entrarComo(u) {
+      usuarioActual = u;
+      // Cada docente tiene su propio espacio de datos en el navegador (historial, checklist, avances).
+      espacioUsuario = u.id.slice(0, 12);
+      Object.keys(STORAGE_BASE).forEach(k => { STORAGE_KEYS[k] = `${STORAGE_BASE[k]}_${espacioUsuario}`; });
+      const nombre = u.nombre || 'Docente';
+      document.getElementById('usuario-nombre').textContent = nombre;
+      document.getElementById('usuario-inicial').textContent = nombre.trim().charAt(0).toUpperCase();
+      const chip = document.getElementById('usuario-chip');
+      chip.classList.remove('hidden'); chip.classList.add('flex');
+      document.getElementById('login-overlay').classList.add('hidden');
+      iniciarAplicacion();
+    }
+
+    function iniciarAplicacion() {
+      cargarEstadoLocal();
+      actualizarDisponibles();
+      actualizarIndicadorProgresoTemario();
+      actualizarBadgeHistorial();
+      poblarFiltrosOficiales();
+      renderOficiales();
+    }
+
+    // =========================================================================
+    // 12. PRUEBAS OFICIALES ECEP 2017–2020: CUADERNILLO + HOJA DE RESPUESTAS
+    // =========================================================================
+    const OF = {
+      filtros: { ciclo: 'todos', asignatura: 'todas', anio: 'todos' },
+      actual: null,      // { prueba, respuestas[], dudas[], segundos, limiteMin, modo: 'rendir'|'revision', resultado, filtro, pagina }
+      timer: null
+    };
+    const LETRAS = ['A', 'B', 'C', 'D'];
+
+    function pruebasOficiales() { return window.PRUEBAS_OFICIALES || []; }
+    function buscarPrueba(id) { return pruebasOficiales().find(p => p.id === id); }
+    function claveProgreso(id) { return `ecep_oficial_prog_${espacioUsuario}_${id}`; }
+    function claveResultados() { return `ecep_oficial_res_${espacioUsuario}`; }
+    function leerJSON(k, def) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; } }
+    function guardarJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { showToast('No se pudo guardar en este navegador (almacenamiento lleno o bloqueado).', 'error'); } }
+    function resultadosOficiales() { return leerJSON(claveResultados(), []); }
+    function cicloTexto(p) { return p.ciclo === 'primer_ciclo' ? 'Primer Ciclo Generalista' : 'Segundo Ciclo'; }
+    function formatoTiempo(seg) {
+      seg = Math.max(0, Math.floor(seg));
+      const h = Math.floor(seg / 3600), m = Math.floor((seg % 3600) / 60), s = seg % 60;
+      const mm = String(m).padStart(2, '0'), ss = String(s).padStart(2, '0');
+      return h ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+    }
+    function tramoOficial(pct) {
+      if (pct >= 75) return { t: 'Logro alto', c: 'text-emerald-700 bg-emerald-50 border-emerald-200' };
+      if (pct >= 60) return { t: 'Logro adecuado', c: 'text-blue-700 bg-blue-50 border-blue-200' };
+      if (pct >= 40) return { t: 'En desarrollo', c: 'text-amber-800 bg-amber-50 border-amber-200' };
+      return { t: 'Inicial', c: 'text-rose-700 bg-rose-50 border-rose-200' };
+    }
+
+    function poblarFiltrosOficiales() {
+      const sel = document.getElementById('of-asignatura');
+      const ciclo = OF.filtros.ciclo;
+      const asigs = [...new Set(pruebasOficiales().filter(p => ciclo === 'todos' || p.ciclo === ciclo).map(p => p.asignatura))].sort((a, b) => a.localeCompare(b, 'es'));
+      if (!asigs.includes(OF.filtros.asignatura)) OF.filtros.asignatura = 'todas';
+      sel.innerHTML = `<option value="todas">Todas las asignaturas</option>` + asigs.map(a => `<option value="${a}">${a}</option>`).join('');
+      sel.value = OF.filtros.asignatura;
+    }
+
+    function setFiltroOficial(tipo, valor) {
+      OF.filtros[tipo] = valor;
+      if (tipo === 'ciclo') poblarFiltrosOficiales();
+      renderOficiales();
+    }
+
+    function renderOficiales() {
+      if (!usuarioActual) return;
+      const f = OF.filtros;
+      const resultados = resultadosOficiales();
+      const lista = pruebasOficiales().filter(p =>
+        (f.ciclo === 'todos' || p.ciclo === f.ciclo) &&
+        (f.asignatura === 'todas' || p.asignatura === f.asignatura) &&
+        (f.anio === 'todos' || String(p.anio) === f.anio));
+
+      document.getElementById('oficiales-resumen').innerHTML =
+        `<strong class="text-slate-700">${lista.length}</strong> de ${pruebasOficiales().length} cuadernillos · ${resultados.length} prueba(s) rendida(s)`;
+
+      const grid = document.getElementById('oficiales-grid');
+      if (lista.length === 0) {
+        grid.innerHTML = `<div class="sm:col-span-2 xl:col-span-3 text-center py-10 text-sm text-slate-500 bg-white rounded-2xl border border-slate-200">No hay cuadernillos con esos filtros.</div>`;
+      } else {
+        grid.innerHTML = lista.map(p => {
+          const prog = leerJSON(claveProgreso(p.id), null);
+          const respondidas = prog ? prog.respuestas.filter(Boolean).length : 0;
+          const ultimos = resultados.filter(r => r.id === p.id);
+          const ultimo = ultimos[ultimos.length - 1];
+          let estado = `<span class="text-slate-400">Aún no rendida</span>`;
+          if (prog) estado = `<span class="text-amber-700 font-semibold">En curso: ${respondidas} de ${p.cerradas} respondidas</span>`;
+          else if (ultimo) estado = `<span class="text-emerald-700 font-semibold">Último resultado: ${ultimo.correctas}/${ultimo.total} (${ultimo.pct}%)</span>`;
+          const idxUltimo = ultimo ? resultados.lastIndexOf(ultimo) : -1;
+          return `
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 flex flex-col gap-3 hover:border-blue-300 transition">
+              <div class="flex items-center justify-between gap-2">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-slate-900 text-white">${p.anio}</span>
+                <span class="text-[11px] font-mono text-slate-400">${p.codigo}</span>
+              </div>
+              <div>
+                <div class="font-extrabold text-slate-900 leading-snug">${p.asignatura}</div>
+                <div class="text-xs text-slate-500 mt-0.5">${cicloTexto(p)} · ${p.cerradas} cerradas${p.abiertas ? ` + ${p.abiertas} abiertas` : ''} · ${p.paginas} págs.</div>
+              </div>
+              <div class="text-xs">${estado}</div>
+              <div class="mt-auto flex flex-wrap gap-2 pt-1">
+                <button type="button" onclick="abrirPruebaOficial('${p.id}')" class="flex-1 py-2.5 px-3 rounded-xl bg-blue-700 hover:bg-blue-800 text-white text-xs font-extrabold shadow-sm">${prog ? 'Continuar' : (ultimo ? 'Rendir de nuevo' : 'Rendir prueba')}</button>
+                ${prog ? `<button type="button" onclick="reiniciarPruebaOficial('${p.id}')" class="py-2.5 px-3 rounded-xl border border-slate-300 text-slate-600 text-xs font-bold hover:bg-slate-50">Reiniciar</button>` : ''}
+                ${ultimo ? `<button type="button" onclick="abrirRevisionOficial(${idxUltimo})" class="py-2.5 px-3 rounded-xl border border-slate-300 text-slate-600 text-xs font-bold hover:bg-slate-50">Revisar</button>` : ''}
+              </div>
+            </div>`;
+        }).join('');
+      }
+
+      const cont = document.getElementById('oficiales-resultados');
+      if (resultados.length === 0) {
+        cont.innerHTML = `<div class="text-center py-6 text-sm text-slate-500">Cuando entregues una prueba oficial, tu puntaje aparecerá aquí.</div>`;
+      } else {
+        cont.innerHTML = resultados.map((r, idx) => ({ r, idx })).reverse().map(({ r, idx }) => {
+          const p = buscarPrueba(r.id); if (!p) return '';
+          const tr = tramoOficial(r.pct);
+          return `
+            <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <div class="font-bold text-sm text-slate-900">${p.asignatura} · ${p.anio} <span class="font-mono text-[11px] text-slate-400">${p.codigo}</span></div>
+                <div class="text-xs text-slate-600 mt-0.5">${r.fecha} · ${r.correctas} de ${r.total} correctas (${r.pct}%) · ${r.omitidas} sin responder · ${formatoTiempo(r.segundos)}
+                  <span class="ml-1 px-2 py-0.5 rounded-full border text-[11px] font-bold ${tr.c}">${tr.t}</span></div>
+              </div>
+              <button type="button" onclick="abrirRevisionOficial(${idx})" class="px-3.5 py-2 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-xs font-bold text-slate-700 self-start sm:self-auto">Revisar respuestas</button>
+            </div>`;
+        }).join('');
+      }
+    }
+
+    function abrirPruebaOficial(id, reiniciar = false) {
+      const p = buscarPrueba(id); if (!p) return;
+      let prog = reiniciar ? null : leerJSON(claveProgreso(id), null);
+      if (!prog || !Array.isArray(prog.respuestas) || prog.respuestas.length !== p.cerradas) {
+        prog = {
+          respuestas: Array(p.cerradas).fill(null),
+          dudas: Array(p.cerradas).fill(false),
+          segundos: 0,
+          limiteMin: Number(document.getElementById('of-tiempo').value) || 0
+        };
+      }
+      OF.actual = { prueba: p, ...prog, modo: 'rendir', filtro: 'todas', pagina: 1, seleccion: null };
+      guardarProgresoOficial();
+      cambiarVista('rendir');
+      prepararVisorOficial();
+      mostrarPaginaOficial(1);
+      iniciarRelojOficial();
+      if (prog.segundos > 0) showToast('Retomaste la prueba donde la dejaste.', 'info');
+    }
+
+    function reiniciarPruebaOficial(id) {
+      openConfirmModal('Reiniciar prueba', 'Se borrarán las respuestas que llevas en este cuadernillo y el cronómetro volverá a cero. ¿Continuar?', () => {
+        storageDel(localStorage, claveProgreso(id));
+        abrirPruebaOficial(id, true);
+      });
+    }
+
+    function guardarProgresoOficial() {
+      const a = OF.actual; if (!a || a.modo !== 'rendir') return;
+      guardarJSON(claveProgreso(a.prueba.id), { respuestas: a.respuestas, dudas: a.dudas, segundos: a.segundos, limiteMin: a.limiteMin });
+    }
+
+    function volverACatalogo() {
+      if (OF.actual && OF.actual.modo === 'rendir') { guardarProgresoOficial(); showToast('Tu avance quedó guardado. Puedes continuar cuando quieras.', 'success'); }
+      cambiarVista('oficiales');
+    }
+
+    function prepararVisorOficial() {
+      const a = OF.actual, p = a.prueba;
+      document.getElementById('rendir-titulo').textContent = `${p.asignatura} · ECEP ${p.anio}`;
+      document.getElementById('rendir-subtitulo').textContent = `${cicloTexto(p)} · ${p.codigo} · ${p.cerradas} preguntas cerradas${p.abiertas ? ` y ${p.abiertas} abiertas` : ''}`;
+      document.getElementById('rendir-btn-entregar').classList.toggle('hidden', a.modo !== 'rendir');
+      const saltos = [`<button type="button" onclick="mostrarPaginaOficial(1)" class="px-2.5 py-1 rounded-lg border border-slate-300 font-semibold text-slate-600 hover:bg-slate-50">Portada</button>`];
+      if (p.abiertas) saltos.push(`<button type="button" onclick="mostrarPaginaOficial(3)" class="px-2.5 py-1 rounded-lg border border-slate-300 font-semibold text-slate-600 hover:bg-slate-50">Preguntas abiertas</button>`);
+      saltos.push(`<button type="button" onclick="mostrarPaginaOficial(${p.paginaInicioCerradas})" class="px-2.5 py-1 rounded-lg border border-slate-300 font-semibold text-slate-600 hover:bg-slate-50">Preguntas cerradas</button>`);
+      document.getElementById('rendir-saltos').innerHTML = saltos.join('');
+      actualizarRelojOficial();
+      renderHojaOficial();
+    }
+
+    function mostrarPaginaOficial(n) {
+      const a = OF.actual; if (!a) return;
+      a.pagina = n;
+      const url = `${a.prueba.archivo}#page=${n}`;
+      const fr = document.getElementById('rendir-pdf');
+      // Se recarga el visor para que salte a la página aunque el PDF ya esté abierto.
+      fr.src = 'about:blank';
+      setTimeout(() => { fr.src = url; }, 30);
+      document.getElementById('rendir-link').href = url;
+      document.getElementById('rendir-pagina').textContent = n;
+    }
+
+    function irAPreguntaOficial(i) {
+      const a = OF.actual; if (!a) return;
+      a.seleccion = i;
+      mostrarPaginaOficial(a.prueba.paginaPregunta[i]);
+      renderHojaOficial();
+    }
+
+    function marcarOficial(i, letra) {
+      const a = OF.actual; if (!a || a.modo !== 'rendir') return;
+      a.respuestas[i] = a.respuestas[i] === letra ? null : letra;
+      a.seleccion = i;
+      guardarProgresoOficial();
+      renderHojaOficial();
+    }
+
+    function alternarDudaOficial(i) {
+      const a = OF.actual; if (!a || a.modo !== 'rendir') return;
+      a.dudas[i] = !a.dudas[i];
+      guardarProgresoOficial();
+      renderHojaOficial();
+    }
+
+    function filtrarHojaOficial(filtro) { if (OF.actual) { OF.actual.filtro = filtro; renderHojaOficial(); } }
+
+    function renderHojaOficial() {
+      const a = OF.actual; if (!a) return;
+      const p = a.prueba;
+      const cab = document.getElementById('rendir-cabecera');
+      const respondidas = a.respuestas.filter(Boolean).length;
+      const dudas = a.dudas.filter(Boolean).length;
+
+      const botonFiltro = (val, txt) => `<button type="button" onclick="filtrarHojaOficial('${val}')" class="px-2.5 py-1 rounded-lg text-xs font-bold border ${a.filtro === val ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-300 text-slate-600 hover:bg-slate-50'}">${txt}</button>`;
+
+      if (a.modo === 'rendir') {
+        const pct = Math.round(respondidas / p.cerradas * 100);
+        cab.innerHTML = `
+          <div class="flex items-center justify-between text-xs font-bold">
+            <span class="text-slate-600">Hoja de respuestas · preguntas cerradas</span>
+            <span class="text-blue-700">${respondidas} / ${p.cerradas}</span>
+          </div>
+          <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden"><div class="h-full bg-gradient-to-r from-blue-600 to-emerald-500" style="width:${pct}%"></div></div>
+          <div class="flex flex-wrap gap-1.5">${botonFiltro('todas', 'Todas')}${botonFiltro('pendientes', `Sin responder (${p.cerradas - respondidas})`)}${botonFiltro('dudas', `Con duda (${dudas})`)}</div>
+          <p class="text-[11px] text-slate-500 leading-relaxed">Toca el <strong>número</strong> para ver la pregunta en el cuadernillo. Toca una letra para marcarla (otra vez para borrarla) y <strong>?</strong> para dejarla con duda.${p.abiertas ? ` Las ${p.abiertas} preguntas abiertas puedes responderlas en papel: no se corrigen automáticamente.` : ''}</p>`;
+      } else {
+        const r = a.resultado;
+        const tr = tramoOficial(r.pct);
+        const inc = r.total - r.correctas - r.omitidas;
+        cab.innerHTML = `
+          <div class="flex items-end justify-between gap-3">
+            <div>
+              <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Resultado · ${r.fecha}</div>
+              <div class="text-3xl font-extrabold text-slate-900">${r.correctas}<span class="text-lg text-slate-400"> / ${r.total}</span></div>
+            </div>
+            <div class="text-right">
+              <div class="text-2xl font-extrabold text-blue-700">${r.pct}%</div>
+              <span class="inline-block mt-1 px-2 py-0.5 rounded-full border text-[11px] font-bold ${tr.c}">${tr.t}</span>
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center text-xs">
+            <div class="rounded-xl bg-emerald-50 border border-emerald-200 py-1.5"><div class="font-extrabold text-emerald-700 text-base">${r.correctas}</div>correctas</div>
+            <div class="rounded-xl bg-rose-50 border border-rose-200 py-1.5"><div class="font-extrabold text-rose-700 text-base">${inc}</div>incorrectas</div>
+            <div class="rounded-xl bg-slate-50 border border-slate-200 py-1.5"><div class="font-extrabold text-slate-600 text-base">${r.omitidas}</div>sin responder</div>
+          </div>
+          <div class="flex flex-wrap gap-1.5">${botonFiltro('todas', 'Todas')}${botonFiltro('incorrectas', 'Incorrectas')}${botonFiltro('omitidas', 'Sin responder')}${botonFiltro('correctas', 'Correctas')}</div>
+          <p class="text-[11px] text-slate-500 leading-relaxed">En verde la respuesta correcta según la pauta oficial del CPEIP; en rojo tu respuesta cuando no coincide. Toca el número para ver la pregunta. El tramo es solo referencial (no es un puntaje de corte oficial).</p>`;
+      }
+
+      const filas = [];
+      for (let i = 0; i < p.cerradas; i++) {
+        const resp = a.respuestas[i], clave = p.claves[i];
+        if (a.modo === 'rendir') {
+          if (a.filtro === 'pendientes' && resp) continue;
+          if (a.filtro === 'dudas' && !a.dudas[i]) continue;
+        } else {
+          const estado = !resp ? 'omitidas' : (resp === clave ? 'correctas' : 'incorrectas');
+          if (a.filtro !== 'todas' && a.filtro !== estado) continue;
+        }
+        const sel = a.seleccion === i ? 'bg-blue-50 ring-1 ring-blue-200' : 'hover:bg-slate-50';
+        const burbujas = LETRAS.map(L => {
+          let cls = 'border-slate-300 text-slate-500 hover:border-blue-500 hover:text-blue-700';
+          if (a.modo === 'rendir') {
+            if (resp === L) cls = 'bg-blue-600 border-blue-600 text-white';
+          } else {
+            if (L === clave) cls = 'bg-emerald-600 border-emerald-600 text-white';
+            else if (resp === L) cls = 'bg-rose-600 border-rose-600 text-white';
+            else cls = 'border-slate-200 text-slate-300';
+          }
+          const accion = a.modo === 'rendir' ? `onclick="marcarOficial(${i}, '${L}')"` : 'disabled';
+          return `<button type="button" ${accion} aria-label="Pregunta ${i + 1}, alternativa ${L}" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 text-xs font-extrabold transition ${cls}">${L}</button>`;
+        }).join('');
+        let extra;
+        if (a.modo === 'rendir') {
+          extra = `<button type="button" onclick="alternarDudaOficial(${i})" title="Marcar con duda" class="w-8 h-8 rounded-lg text-xs font-extrabold border ${a.dudas[i] ? 'bg-amber-400 border-amber-400 text-slate-900' : 'border-slate-200 text-slate-400 hover:border-amber-400'}">?</button>`;
+        } else {
+          const icono = !resp ? '<span class="text-slate-400 text-xs font-bold">—</span>' : (resp === clave ? '<span class="text-emerald-600 font-extrabold">✓</span>' : '<span class="text-rose-600 font-extrabold">✗</span>');
+          extra = `<span class="w-8 text-center">${icono}</span>`;
+        }
+        filas.push(`
+          <div class="flex items-center gap-1.5 sm:gap-2 px-1.5 py-1 rounded-lg ${sel}">
+            <button type="button" onclick="irAPreguntaOficial(${i})" title="Ver en el cuadernillo (pág. ${p.paginaPregunta[i]})" class="w-9 text-right text-sm font-extrabold text-blue-700 hover:underline">${i + 1}</button>
+            <div class="flex gap-1 sm:gap-1.5">${burbujas}</div>
+            ${extra}
+            <span class="ml-auto text-[10px] text-slate-400">pág. ${p.paginaPregunta[i]}</span>
+          </div>`);
+      }
+      document.getElementById('rendir-hoja').innerHTML = filas.length ? filas.join('') :
+        `<div class="text-center py-8 text-sm text-slate-500">No hay preguntas en este filtro.</div>`;
+    }
+
+    function iniciarRelojOficial() {
+      clearInterval(OF.timer);
+      OF.timer = setInterval(() => {
+        const a = OF.actual;
+        if (!a || a.modo !== 'rendir' || state.vistaActual !== 'rendir' || document.hidden) return;
+        a.segundos++;
+        actualizarRelojOficial();
+        if (a.segundos % 10 === 0) guardarProgresoOficial();
+        if (a.limiteMin && a.segundos >= a.limiteMin * 60) {
+          showToast('Se cumplió el tiempo límite: la prueba se entregó automáticamente.', 'warning');
+          finalizarOficial();
+        }
+      }, 1000);
+    }
+
+    function actualizarRelojOficial() {
+      const a = OF.actual; if (!a) return;
+      const el = document.getElementById('rendir-reloj');
+      if (a.modo !== 'rendir') { el.textContent = `Duración ${formatoTiempo(a.resultado.segundos)}`; el.className = 'px-3 py-2 rounded-xl bg-slate-100 text-slate-700 font-mono text-sm font-bold'; return; }
+      if (a.limiteMin) {
+        const resta = a.limiteMin * 60 - a.segundos;
+        el.textContent = `Quedan ${formatoTiempo(resta)}`;
+        el.className = `px-3 py-2 rounded-xl font-mono text-sm font-bold text-white ${resta <= 300 ? 'bg-rose-600' : 'bg-slate-900'}`;
+      } else {
+        el.textContent = `⏱ ${formatoTiempo(a.segundos)}`;
+        el.className = 'px-3 py-2 rounded-xl bg-slate-900 text-white font-mono text-sm font-bold';
+      }
+    }
+
+    function entregarOficial() {
+      const a = OF.actual; if (!a || a.modo !== 'rendir') return;
+      const faltan = a.respuestas.filter(r => !r).length;
+      const msg = faltan
+        ? `Te quedan ${faltan} pregunta(s) sin responder; se contarán como no logradas. ¿Entregar de todas formas y ver tu corrección?`
+        : '¿Entregar la prueba y ver tu corrección con la pauta oficial?';
+      openConfirmModal('Entregar prueba', msg, finalizarOficial);
+    }
+
+    function finalizarOficial() {
+      const a = OF.actual; if (!a || a.modo !== 'rendir') return;
+      clearInterval(OF.timer);
+      const p = a.prueba;
+      let correctas = 0, omitidas = 0;
+      a.respuestas.forEach((r, i) => { if (!r) omitidas++; else if (r === p.claves[i]) correctas++; });
+      const res = {
+        id: p.id, fecha: new Date().toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' }), ts: Date.now(),
+        correctas, omitidas, total: p.cerradas, pct: Math.round(correctas / p.cerradas * 100),
+        respuestas: [...a.respuestas], segundos: a.segundos
+      };
+      const lista = resultadosOficiales(); lista.push(res); guardarJSON(claveResultados(), lista);
+      storageDel(localStorage, claveProgreso(p.id));
+      OF.actual = { prueba: p, respuestas: res.respuestas, dudas: [], segundos: res.segundos, modo: 'revision', resultado: res, filtro: 'todas', pagina: a.pagina, seleccion: null };
+      prepararVisorOficial();
+      showToast(`Prueba corregida: ${correctas} de ${p.cerradas} correctas (${res.pct}%).`, 'success');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function abrirRevisionOficial(idx) {
+      const r = resultadosOficiales()[idx]; if (!r) return;
+      const p = buscarPrueba(r.id); if (!p) return;
+      clearInterval(OF.timer);
+      OF.actual = { prueba: p, respuestas: r.respuestas, dudas: [], segundos: r.segundos, modo: 'revision', resultado: r, filtro: 'todas', pagina: 1, seleccion: null };
+      cambiarVista('rendir');
+      prepararVisorOficial();
+      mostrarPaginaOficial(p.paginaInicioCerradas);
+    }
+
+    window.addEventListener('beforeunload', () => { if (OF.actual && OF.actual.modo === 'rendir') guardarProgresoOficial(); });
+
+    // =========================================================================
+    // INICIALIZACIÓN AL CARGAR LA PÁGINA
+    // =========================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      if (!restaurarSesion()) {
+        setTimeout(() => { const c = document.getElementById('login-correo'); if (c) c.focus(); }, 50);
+      }
+    });
+  </script>
+</body>
+</html>
